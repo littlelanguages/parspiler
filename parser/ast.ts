@@ -79,7 +79,11 @@ export class Visitor
   visitProduction(
     a: [Token, Token, Expr, Token],
   ): Production {
-    throw new Error("Method not implemented.");
+    return {
+      tag: "Production",
+      name: { tag: "ID", location: a[0][1], id: a[0][2] },
+      expr: a[2],
+    };
   }
 
   visitExpr(a: [Expr, [Token, Expr][]]): Expr {

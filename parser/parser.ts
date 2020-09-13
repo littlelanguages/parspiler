@@ -96,7 +96,22 @@ class Parser<
     const a3 = this.matchToken(TToken.Semicolon);
     const a4: Array<T_Production> = [];
 
+    while (this.isTokens(firstProduction)) {
+      a4.push(this.production());
+    }
+
+    this.matchToken(TToken.EOS);
+
     return this.visitor.visitDefinition([a1, a2, a3, a4]);
+  }
+
+  production(): T_Production {
+    const a1 = this.matchToken(TToken.Identifier);
+    const a2 = this.matchToken(TToken.Colon);
+    const a3 = this.expr();
+    const a4 = this.matchToken(TToken.Semicolon);
+
+    return this.visitor.visitProduction([a1, a2, a3, a4]);
   }
 
   expr(): T_Expr {
@@ -196,5 +211,8 @@ const firstFactor = [
   TToken.LParen,
   TToken.LCurly,
   TToken.LBracket,
+  TToken.Identifier,
+];
+const firstProduction = [
   TToken.Identifier,
 ];
