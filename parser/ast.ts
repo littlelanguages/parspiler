@@ -105,7 +105,11 @@ export class Visitor
   }
 
   visitFactor3(a: [Token, Expr, Token]): Expr {
-    throw new Error("Method not implemented.");
+    return {
+      tag: "ManyExpr",
+      location: combine(a[0][1], a[2][1]),
+      expr: a[1],
+    };
   }
 
   visitFactor4(a: [Token, Expr, Token]): Expr {

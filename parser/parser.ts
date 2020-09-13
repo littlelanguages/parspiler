@@ -90,6 +90,12 @@ class Parser<
       const a3 = this.matchToken(TToken.RParen);
 
       return this.visitor.visitFactor2([a1, a2, a3]);
+    } else if (this.isToken(TToken.LCurly)) {
+      const a1 = this.nextToken();
+      const a2 = this.expr();
+      const a3 = this.matchToken(TToken.RCurly);
+
+      return this.visitor.visitFactor3([a1, a2, a3]);
     } else if (this.isToken(TToken.Identifier)) {
       const a1 = this.nextToken();
 
