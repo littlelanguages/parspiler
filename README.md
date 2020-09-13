@@ -7,7 +7,9 @@ A parser of a parser generator
 The following EBNF grammar defines `parspiler`'s syntax.
 
 ```
-Definition: {Production};
+Definition: 
+    "uses" LiteralString ";"
+    {Production};
     
 Production: Identifier ":" Expr ";";
 
