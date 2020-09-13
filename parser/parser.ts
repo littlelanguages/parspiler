@@ -76,7 +76,13 @@ class Parser<
   }
 
   sequenceExpr(): T_SequenceExpr {
-    return this.visitor.visitSequenceExpr([this.factor()]);
+    const a1 = [];
+
+    while (this.isTokens(firstFactor)) {
+      a1.push(this.factor());
+    }
+
+    return this.visitor.visitSequenceExpr(a1);
   }
 
   factor(): T_Factor {
