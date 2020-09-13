@@ -7,11 +7,7 @@ import * as Parser from "./parser.ts";
 Deno.test('parser - expr - "while"', () => {
   Assert.assertEquals(
     parseExpr('"while"'),
-    {
-      tag: "LiteralString",
-      location: range(0, 1, 1, 6, 1, 7),
-      value: '"while"',
-    },
+    mkLiteralString([0, 1, 1], '"while"'),
   );
 });
 
@@ -21,11 +17,7 @@ Deno.test("parser - expr - (...)", () => {
     {
       tag: "ParenExpr",
       location: range(0, 1, 1, 14, 1, 15),
-      expr: {
-        tag: "ID",
-        location: range(1, 1, 2, 13, 1, 14),
-        id: "LiteralString",
-      },
+      expr: mkID([1, 1, 2], "LiteralString"),
     },
   );
 });
@@ -36,11 +28,7 @@ Deno.test("parser - expr - {...}", () => {
     {
       tag: "ManyExpr",
       location: range(0, 1, 1, 14, 1, 15),
-      expr: {
-        tag: "ID",
-        location: range(1, 1, 2, 13, 1, 14),
-        id: "LiteralString",
-      },
+      expr: mkID([1, 1, 2], "LiteralString"),
     },
   );
 });
@@ -51,11 +39,7 @@ Deno.test("parser - expr - [...]", () => {
     {
       tag: "OptionalExpr",
       location: range(0, 1, 1, 14, 1, 15),
-      expr: {
-        tag: "ID",
-        location: range(1, 1, 2, 13, 1, 14),
-        id: "LiteralString",
-      },
+      expr: mkID([1, 1, 2], "LiteralString"),
     },
   );
 });
@@ -63,11 +47,7 @@ Deno.test("parser - expr - [...]", () => {
 Deno.test("parser - expr - LiteralString", () => {
   Assert.assertEquals(
     parseExpr("LiteralString"),
-    {
-      tag: "ID",
-      location: range(0, 1, 1, 12, 1, 13),
-      id: "LiteralString",
-    },
+    mkID([0, 1, 1], "LiteralString"),
   );
 });
 
@@ -77,25 +57,21 @@ Deno.test("parser - expr - a (b) [c] {d}", () => {
     {
       tag: "SequenceExpr",
       exprs: [
-        {
-          tag: "ID",
-          location: mkCoordinate(0, 1, 1),
-          id: "a",
-        },
+        mkID([0, 1, 1], "a"),
         {
           tag: "ParenExpr",
           location: range(2, 1, 3, 4, 1, 5),
-          expr: { tag: "ID", location: mkCoordinate(3, 1, 4), id: "b" },
+          expr: mkID([3, 1, 4], "b"),
         },
         {
           tag: "OptionalExpr",
           location: range(6, 1, 7, 8, 1, 9),
-          expr: { tag: "ID", location: mkCoordinate(7, 1, 8), id: "c" },
+          expr: mkID([7, 1, 8], "c"),
         },
         {
           tag: "ManyExpr",
           location: range(10, 1, 11, 12, 1, 13),
-          expr: { tag: "ID", location: mkCoordinate(11, 1, 12), id: "d" },
+          expr: mkID([11, 1, 12], "d"),
         },
       ],
     },
@@ -111,22 +87,22 @@ Deno.test("parser - expr - a b | c d | e f", () => {
         {
           tag: "SequenceExpr",
           exprs: [
-            { tag: "ID", location: mkCoordinate(0, 1, 1), id: "a" },
-            { tag: "ID", location: mkCoordinate(2, 1, 3), id: "b" },
+            mkID([0, 1, 1], "a"),
+            mkID([2, 1, 3], "b"),
           ],
         },
         {
           tag: "SequenceExpr",
           exprs: [
-            { tag: "ID", location: mkCoordinate(6, 1, 7), id: "c" },
-            { tag: "ID", location: mkCoordinate(8, 1, 9), id: "d" },
+            mkID([6, 1, 7], "c"),
+            mkID([8, 1, 9], "d"),
           ],
         },
         {
           tag: "SequenceExpr",
           exprs: [
-            { tag: "ID", location: mkCoordinate(12, 1, 13), id: "e" },
-            { tag: "ID", location: mkCoordinate(14, 1, 15), id: "f" },
+            mkID([12, 1, 13], "e"),
+            mkID([14, 1, 15], "f"),
           ],
         },
       ],
@@ -139,11 +115,7 @@ Deno.test("parser - definition - minimal", () => {
     parseDefinition('uses "some.ll";'),
     {
       tag: "Definition",
-      uses: {
-        tag: "LiteralString",
-        location: range(5, 1, 6, 13, 1, 14),
-        value: '"some.ll"',
-      },
+      uses: mkLiteralString([5, 1, 6], '"some.ll"'),
       productions: [],
     },
   );
@@ -218,28 +190,32 @@ function parseDefinition(text: string) {
 function mkID(point: [number, number, number], id: string) {
   return {
     tag: "ID",
-    location: range(
-      point[0],
-      point[1],
-      point[2],
-      point[0] + id.length - 1,
-      point[1],
-      point[2] + id.length - 1,
-    ),
+    location: id.length == 1
+      ? mkCoordinate(point[0], point[1], point[2])
+      : range(
+        point[0],
+        point[1],
+        point[2],
+        point[0] + id.length - 1,
+        point[1],
+        point[2] + id.length - 1,
+      ),
     id,
   };
 }
 function mkLiteralString(point: [number, number, number], value: string) {
   return {
     tag: "LiteralString",
-    location: range(
-      point[0],
-      point[1],
-      point[2],
-      point[0] + value.length - 1,
-      point[1],
-      point[2] + value.length - 1,
-    ),
+    location: value.length == 1
+      ? mkCoordinate(point[0], point[1], point[2])
+      : range(
+        point[0],
+        point[1],
+        point[2],
+        point[0] + value.length - 1,
+        point[1],
+        point[2] + value.length - 1,
+      ),
     value,
   };
 }
