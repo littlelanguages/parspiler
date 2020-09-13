@@ -1,9 +1,8 @@
 import * as Assert from "../testing/asserts.ts";
 
 import * as AST from "./ast.ts";
-import * as Parser from "./parser.ts";
 import { range } from "./location.ts";
-import { assertStrictEquals } from "../testing/asserts.ts";
+import * as Parser from "./parser.ts";
 
 Deno.test('parser - expr - "while"', () => {
   Assert.assertEquals(
