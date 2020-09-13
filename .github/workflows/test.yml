@@ -24,4 +24,4 @@ jobs:
       - name: Lint parspiler
         run: deno fmt --check
       - name: Test parspiler
-        run: deno test --allow-none
+        run: .bin/test.sh
