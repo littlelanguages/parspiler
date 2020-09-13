@@ -37,19 +37,19 @@ export type SequenceExpr = {
 export type ParenExpr = {
   tag: "ParenExpr";
   location: Location;
-  value: Expr;
+  expr: Expr;
 };
 
 export type ManyExpr = {
   tag: "ManyExpr";
   location: Location;
-  value: Expr;
+  expr: Expr;
 };
 
 export type OptionalExpr = {
   tag: "OptionalExpr";
   location: Location;
-  value: Expr;
+  expr: Expr;
 };
 
 export type LiteralString = {
@@ -97,7 +97,11 @@ export class Visitor
   }
 
   visitFactor2(a: [Token, Expr, Token]): Expr {
-    throw new Error("Method not implemented.");
+    return {
+      tag: "ParenExpr",
+      location: combine(a[0][1], a[2][1]),
+      expr: a[1],
+    };
   }
 
   visitFactor3(a: [Token, Expr, Token]): Expr {
