@@ -109,6 +109,6 @@ export class Visitor
   }
 
   visitFactor5(a: Token): Expr {
-    throw new Error("Method not implemented.");
+    return { tag: "ID", location: a[1], id: a[2] };
   }
 }

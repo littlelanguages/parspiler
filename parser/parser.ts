@@ -84,6 +84,10 @@ class Parser<
       const a1 = this.nextToken();
 
       return this.visitor.visitFactor1(a1);
+    } else if (this.isToken(TToken.Identifier)) {
+      const a1 = this.nextToken();
+
+      return this.visitor.visitFactor5(a1);
     } else {
       throw new SyntaxError(this.scanner.current(), firstFactor);
     }

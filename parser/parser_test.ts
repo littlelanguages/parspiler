@@ -15,6 +15,17 @@ Deno.test('parser - expr - "while"', () => {
   );
 });
 
+Deno.test("parser - expr - LiteralString", () => {
+  Assert.assertEquals(
+    parseExpr("LiteralString"),
+    {
+      tag: "ID",
+      location: range(0, 1, 1, 12, 1, 13),
+      id: "LiteralString",
+    },
+  );
+});
+
 function parseExpr(text: string) {
   return Parser.parseExpr(text, new AST.Visitor());
 }
