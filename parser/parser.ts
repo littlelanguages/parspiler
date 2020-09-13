@@ -72,7 +72,16 @@ class Parser<
   }
 
   expr(): T_Expr {
-    return this.visitor.visitExpr([this.sequenceExpr(), []]);
+    const a1: T_SequenceExpr = this.sequenceExpr();
+    const a2: Array<[Token, T_SequenceExpr]> = [];
+
+    while (this.isToken(TToken.Bar)) {
+      const a21 = this.nextToken();
+      const a22 = this.sequenceExpr();
+      a2.push([a21, a22]);
+    }
+
+    return this.visitor.visitExpr([a1, a2]);
   }
 
   sequenceExpr(): T_SequenceExpr {

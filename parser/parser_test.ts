@@ -114,6 +114,38 @@ Deno.test("parser - expr - a (b) [c] {d}", () => {
   );
 });
 
+Deno.test("parser - expr - a b | c d | e f", () => {
+  Assert.assertEquals(
+    parseExpr("a b | c d | e f"),
+    {
+      tag: "AlternativeExpr",
+      exprs: [
+        {
+          tag: "SequenceExpr",
+          exprs: [
+            { tag: "ID", location: mkCoordinate(0, 1, 1), id: "a" },
+            { tag: "ID", location: mkCoordinate(2, 1, 3), id: "b" },
+          ],
+        },
+        {
+          tag: "SequenceExpr",
+          exprs: [
+            { tag: "ID", location: mkCoordinate(6, 1, 7), id: "c" },
+            { tag: "ID", location: mkCoordinate(8, 1, 9), id: "d" },
+          ],
+        },
+        {
+          tag: "SequenceExpr",
+          exprs: [
+            { tag: "ID", location: mkCoordinate(12, 1, 13), id: "e" },
+            { tag: "ID", location: mkCoordinate(14, 1, 15), id: "f" },
+          ],
+        },
+      ],
+    },
+  );
+});
+
 function parseExpr(text: string) {
   return Parser.parseExpr(text, new AST.Visitor());
 }
