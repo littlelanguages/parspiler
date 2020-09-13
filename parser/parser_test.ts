@@ -45,6 +45,21 @@ Deno.test("parser - expr - {...}", () => {
   );
 });
 
+Deno.test("parser - expr - [...]", () => {
+  Assert.assertEquals(
+    parseExpr("[LiteralString]"),
+    {
+      tag: "OptionalExpr",
+      location: range(0, 1, 1, 14, 1, 15),
+      expr: {
+        tag: "ID",
+        location: range(1, 1, 2, 13, 1, 14),
+        id: "LiteralString",
+      },
+    },
+  );
+});
+
 Deno.test("parser - expr - LiteralString", () => {
   Assert.assertEquals(
     parseExpr("LiteralString"),

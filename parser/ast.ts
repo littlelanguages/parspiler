@@ -113,7 +113,11 @@ export class Visitor
   }
 
   visitFactor4(a: [Token, Expr, Token]): Expr {
-    throw new Error("Method not implemented.");
+    return {
+      tag: "OptionalExpr",
+      location: combine(a[0][1], a[2][1]),
+      expr: a[1],
+    };
   }
 
   visitFactor5(a: Token): Expr {
