@@ -41,6 +41,25 @@ export function parseExpr<
   return new Parser(mkScanner(input), visitor).expr();
 }
 
+export function parseDefinition<
+  T_Definition,
+  T_Production,
+  T_Expr,
+  T_SequenceExpr,
+  T_Factor,
+>(
+  input: string,
+  visitor: Visitor<
+    T_Definition,
+    T_Production,
+    T_Expr,
+    T_SequenceExpr,
+    T_Factor
+  >,
+): T_Definition {
+  return new Parser(mkScanner(input), visitor).definition();
+}
+
 class Parser<
   T_Definition,
   T_Production,
@@ -69,6 +88,15 @@ class Parser<
   ) {
     this.scanner = scanner;
     this.visitor = visitor;
+  }
+
+  definition(): T_Definition {
+    const a1 = this.matchToken(TToken.Uses);
+    const a2 = this.matchToken(TToken.LiteralString);
+    const a3 = this.matchToken(TToken.Semicolon);
+    const a4: Array<T_Production> = [];
+
+    return this.visitor.visitDefinition([a1, a2, a3, a4]);
   }
 
   expr(): T_Expr {

@@ -67,9 +67,13 @@ export type IdentifierReference = {
 export class Visitor
   implements Parser.Visitor<Definition, Production, Expr, Expr, Expr> {
   visitDefinition(
-    a: [Token, Token, Token, Production[]],
+    a: [Token, Token, Token, Array<Production>],
   ): Definition {
-    throw new Error("Method not implemented.");
+    return {
+      tag: "Definition",
+      uses: { tag: "LiteralString", location: a[1][1], value: a[1][2] },
+      productions: a[3],
+    };
   }
 
   visitProduction(

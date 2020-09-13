@@ -146,6 +146,25 @@ Deno.test("parser - expr - a b | c d | e f", () => {
   );
 });
 
+Deno.test("parser - definition - minimal", () => {
+  Assert.assertEquals(
+    parseDefinition('uses "some.ll";'),
+    {
+      tag: "Definition",
+      uses: {
+        tag: "LiteralString",
+        location: range(5, 1, 6, 13, 1, 14),
+        value: '"some.ll"',
+      },
+      productions: [],
+    },
+  );
+});
+
 function parseExpr(text: string) {
   return Parser.parseExpr(text, new AST.Visitor());
+}
+
+function parseDefinition(text: string) {
+  return Parser.parseDefinition(text, new AST.Visitor());
 }
