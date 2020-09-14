@@ -35,9 +35,11 @@ export function asDoc(
         ]),
         PP.nest(
           2,
-          PP.vcat(errorItem.errors.map((e) =>
-            ScanpilerErrors.asDoc(e, errorItem.fileName)
-          )),
+          PP.vcat(
+            errorItem.errors.map((e) =>
+              ScanpilerErrors.asDoc(e, errorItem.fileName)
+            ),
+          ),
         ),
       ]);
     case "ScannerDefinitionFileDoesNotExistError":
