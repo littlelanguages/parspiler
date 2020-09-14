@@ -1,3 +1,5 @@
+import { Either, right, left } from "../data/either.ts";
+import { Errors } from "./errors.ts";
 import { mkScanner, Scanner, Token, TToken } from "./scanner.ts";
 
 export interface Visitor<
@@ -56,8 +58,8 @@ export function parseDefinition<
     T_SequenceExpr,
     T_Factor
   >,
-): T_Definition {
-  return new Parser(mkScanner(input), visitor).definition();
+): Either<Errors, T_Definition> {
+  return right(new Parser(mkScanner(input), visitor).definition());
 }
 
 class Parser<

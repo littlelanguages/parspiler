@@ -1,6 +1,8 @@
 import * as Assert from "../testing/asserts.ts";
 
 import * as AST from "./ast.ts";
+import { Either, right } from "../data/either.ts";
+import { Errors } from "./errors.ts";
 import { mkCoordinate, range } from "./location.ts";
 import * as Parser from "./parser.ts";
 
@@ -113,11 +115,11 @@ Deno.test("parser - expr - a b | c d | e f", () => {
 Deno.test("parser - definition - minimal", () => {
   Assert.assertEquals(
     parseDefinition('uses "some.ll";'),
-    {
+    right({
       tag: "Definition",
       uses: mkLiteralString([5, 1, 6], '"some.ll"'),
       productions: [],
-    },
+    }),
   );
 });
 
@@ -129,7 +131,7 @@ Deno.test("parser - definition - simple", () => {
         'Production: Identifier ":" Expr ";";\n' +
         "Expr: LiteralString | Identifier;",
     ),
-    {
+    right({
       tag: "Definition",
       uses: mkLiteralString([5, 1, 6], '"some.ll"'),
       productions: [
@@ -175,7 +177,7 @@ Deno.test("parser - definition - simple", () => {
           },
         },
       ],
-    },
+    }),
   );
 });
 
@@ -183,7 +185,7 @@ function parseExpr(text: string) {
   return Parser.parseExpr(text, new AST.Visitor());
 }
 
-function parseDefinition(text: string) {
+function parseDefinition(text: string): Either<Errors, AST.Definition> {
   return Parser.parseDefinition(text, new AST.Visitor());
 }
 
