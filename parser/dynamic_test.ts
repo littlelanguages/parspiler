@@ -9,33 +9,39 @@ import { Definition } from "../cfg/definition.ts";
 import { Dynamic, Definition as LADefinition } from "../scanpiler.ts";
 
 const scannerDefinition = Dynamic
-  .translate(Deno.readTextFileSync("./parser/scanner.ll"))
+  .translate(Deno.readTextFileSync("./test/simple.ll"))
   .either((_) => new LADefinition.Definition(), (d) => d);
 
 Deno.test("dynamic - scanner file does not exist", () => {
-  assertTranslateErrors('uses "not.exists.ll";', [
+  assertTranslateErrors('uses "./test/not.exists.ll";', [
     {
       tag: "ScannerDefinitionFileDoesNotExistError",
-      location: range(5, 1, 6, 19, 1, 20),
-      name: "not.exists.ll",
+      location: range(5, 1, 6, 26, 1, 27),
+      name: "./test/not.exists.ll",
     },
   ]);
 });
 
 Deno.test("dynamic - scanner file exists", async () => {
-  const translation = await translate('uses "./parser/scanner.ll";');
+  const translation = await translate('uses "./test/simple.ll";');
 
   Assert.assert(isRight(translation));
 });
 
-Deno.test(
-  {
-    name: "dynamic - an error in the scanner file propogates",
-    ignore: true,
-    fn() {
-    },
-  },
-);
+Deno.test("dynamic - an error in the scanner file propogates", async () => {
+  assertTranslateErrors('uses "./test/broken.ll";', [{
+    tag: "ScannerDefinitionError",
+    location: range(5, 1, 6, 22, 1, 23),
+    fileName: "./test/broken.ll",
+    errors: [
+      {
+        tag: "UnknownFragmentIdentifierError",
+        location: range(24, 2, 18, 26, 2, 20),
+        name: "bob",
+      },
+    ],
+  }]);
+});
 
 Deno.test({
   name: "dynamic - reference to terminal symbol",

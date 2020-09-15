@@ -18,7 +18,12 @@ export function translate(
       const fileName = dropRight(1, dropLeft(1, r.uses.value));
       try {
         const input = await Deno.readTextFile(fileName);
-        return Dynamic.translate(input);
+        return Dynamic.translate(input).mapLeft((e) => [{
+          tag: "ScannerDefinitionError",
+          location: r.uses.location,
+          fileName: fileName,
+          errors: e,
+        }]);
       } catch (_) {
         return left(
           [
