@@ -16,6 +16,12 @@ Deno.test("dynamic - scanner file does not exist", () => {
   ]);
 });
 
+Deno.test("dynamic - scanner file exists", async () => {
+  const translation = await translate('uses "./parser/scanner.ll";');
+
+  Assert.assert(translation.either((_) => false, (_) => true));
+});
+
 async function assertTranslateErrors(content: string, errors: Errors.Errors) {
   const x = await translate(content);
 
