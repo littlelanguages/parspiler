@@ -1,5 +1,5 @@
 import * as PP from "https://raw.githubusercontent.com/littlelanguages/deno-lib-text-prettyprint/0.3.0/mod.ts";
-import * as ScanpilerErrors from "https://raw.githubusercontent.com/littlelanguages/scanpiler/0.1.0/parser/errors.ts";
+import { Errors as ScanpilerErrors } from "../scanpiler.ts";
 import { Location } from "./location.ts";
 
 export type Errors = Array<ErrorItem>;
