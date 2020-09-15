@@ -1,4 +1,4 @@
 #!/bin/bash
 
 .bin/build.sh
-deno test
+deno test --allow-read
