@@ -1,4 +1,4 @@
-import { isRight, left } from "../data/either.ts";
+import { isRight, left, right } from "../data/either.ts";
 
 import * as Assert from "../testing/asserts.ts";
 import * as Errors from "./errors.ts";
@@ -25,7 +25,7 @@ Deno.test("dynamic - scanner file does not exist", () => {
 Deno.test("dynamic - scanner file exists", async () => {
   const translation = await translate('uses "./test/simple.ll";');
 
-  Assert.assert(isRight(translation));
+  Assert.assertEquals(translation, right(new Definition(scannerDefinition)));
 });
 
 Deno.test("dynamic - an error in the scanner file propogates", async () => {
