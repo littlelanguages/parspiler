@@ -20,8 +20,8 @@ const scannerDefinition = Dynamic
   .translate(Deno.readTextFileSync("./test/simple.ll"))
   .either((_) => new LADefinition.Definition(), (d) => d);
 
-Deno.test("dynamic - scanner file does not exist", () => {
-  assertTranslateErrors('uses "./test/not.exists.ll";', [
+Deno.test("dynamic - scanner file does not exist", async () => {
+  await assertTranslateErrors('uses "./test/not.exists.ll";', [
     {
       tag: "ScannerDefinitionFileDoesNotExistError",
       location: range(5, 1, 6, 26, 1, 27),
