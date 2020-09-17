@@ -4,7 +4,10 @@ export class Definition {
   scanner: Scanner.Definition;
   productions: Array<Production>;
 
-  constructor(scanner: Scanner.Definition, productions: Array<Production> = []) {
+  constructor(
+    scanner: Scanner.Definition,
+    productions: Array<Production> = [],
+  ) {
     this.scanner = scanner;
     this.productions = productions;
   }
@@ -37,7 +40,6 @@ export class Sequence implements Expr {
     this.exprs = exprs;
   }
 }
-
 
 export class Alternative implements Expr {
   exprs: Array<Expr>;
