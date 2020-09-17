@@ -1,11 +1,19 @@
-import { isRight, left, right } from "../data/either.ts";
+import { left, right } from "../data/either.ts";
 
 import * as Assert from "../testing/asserts.ts";
 import * as Errors from "./errors.ts";
 
 import { translate } from "./dynamic.ts";
 import { range } from "./location.ts";
-import { Definition } from "../cfg/definition.ts";
+import {
+  Alternative,
+  Definition,
+  Identifier,
+  Many,
+  Optional,
+  Production,
+  Sequence,
+} from "../cfg/definition.ts";
 import { Dynamic, Definition as LADefinition } from "../scanpiler.ts";
 
 const scannerDefinition = Dynamic
@@ -43,15 +51,88 @@ Deno.test("dynamic - an error in the scanner file propogates", async () => {
   }]);
 });
 
-Deno.test({
-  name: "dynamic - reference to terminal symbol",
-  ignore: true,
-  fn() {
-    assertTranslation(
-      'uses "./parser/scanner.ll";\n' + "Program: {Identifier};",
-      new Definition(scannerDefinition),
-    );
-  },
+Deno.test("dynamic - reference to terminal symbol", async () => {
+  await assertTranslation(
+    'uses "./test/simple.ll";\n' + "Program: Identifier;",
+    new Definition(
+      scannerDefinition,
+      [
+        new Production(
+          "Program",
+          new Identifier("Identifier"),
+        ),
+      ],
+    ),
+  );
+
+  await assertTranslation(
+    'uses "./test/simple.ll";\n' + "Program: Identifier Identifier;",
+    new Definition(
+      scannerDefinition,
+      [
+        new Production(
+          "Program",
+          new Sequence(
+            [new Identifier("Identifier"), new Identifier("Identifier")],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  await assertTranslation(
+    'uses "./test/simple.ll";\n' + "Program: {Identifier};",
+    new Definition(
+      scannerDefinition,
+      [
+        new Production(
+          "Program",
+          new Many(new Identifier("Identifier")),
+        ),
+      ],
+    ),
+  );
+
+  await assertTranslation(
+    'uses "./test/simple.ll";\n' + "Program: [Identifier];",
+    new Definition(
+      scannerDefinition,
+      [
+        new Production(
+          "Program",
+          new Optional(new Identifier("Identifier")),
+        ),
+      ],
+    ),
+  );
+
+  await assertTranslation(
+    'uses "./test/simple.ll";\n' + "Program: (Identifier);",
+    new Definition(
+      scannerDefinition,
+      [
+        new Production(
+          "Program",
+          new Identifier("Identifier"),
+        ),
+      ],
+    ),
+  );
+
+  await assertTranslation(
+    'uses "./test/simple.ll";\n' + "Program: (Identifier | Identifier);",
+    new Definition(
+      scannerDefinition,
+      [
+        new Production(
+          "Program",
+          new Alternative(
+            [new Identifier("Identifier"), new Identifier("Identifier")],
+          ),
+        ),
+      ],
+    ),
+  );
 });
 
 Deno.test({
@@ -71,7 +152,7 @@ Deno.test({
 async function assertTranslation(content: string, definition: Definition) {
   const x = await translate(content);
 
-  Assert.assert(isRight(x));
+  Assert.assertEquals(x, right(definition));
 }
 
 async function assertTranslateErrors(content: string, errors: Errors.Errors) {
