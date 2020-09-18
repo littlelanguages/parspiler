@@ -85,6 +85,21 @@ class Translate {
   }
 
   private translateProduction(production: AST.Production) {
+    if (this.terminals.has(production.name.id)) {
+      this.errors.push({
+        tag: "SymbolDefinedAsTerminalError",
+        location: production.name.location,
+        name: production.name.id,
+      });
+    }
+    if (Set.setOf(this.productions.map((p) => p.lhs)).has(production.name.id)) {
+      this.errors.push({
+        tag: "SymbolDefinedAsNonTerminalError",
+        location: production.name.location,
+        name: production.name.id,
+      });
+    }
+
     this.productions.push(
       new Production(production.name.id, this.translateExpr(production.expr)),
     );

@@ -7,7 +7,9 @@ export type Errors = Array<ErrorItem>;
 export type ErrorItem =
   | ScannerDefinitionError
   | ScannerDefinitionFileDoesNotExistError
-  | UnknownSymbolError;
+  | UnknownSymbolError
+  | SymbolDefinedAsNonTerminalError
+  | SymbolDefinedAsTerminalError;
 
 export type ScannerDefinitionError = {
   tag: "ScannerDefinitionError";
@@ -24,6 +26,18 @@ export type ScannerDefinitionFileDoesNotExistError = {
 
 export type UnknownSymbolError = {
   tag: "UnknownSymbolError";
+  location: Location;
+  name: string;
+};
+
+export type SymbolDefinedAsNonTerminalError = {
+  tag: "SymbolDefinedAsNonTerminalError";
+  location: Location;
+  name: string;
+};
+
+export type SymbolDefinedAsTerminalError = {
+  tag: "SymbolDefinedAsTerminalError";
   location: Location;
   name: string;
 };
@@ -59,6 +73,20 @@ export function asDoc(
       return PP.hcat([
         "No terminal or non-terminal defined with the name ",
         errorItem.name,
+        ScanpilerErrors.errorLocation(errorItem.location, fileName),
+      ]);
+    case "SymbolDefinedAsNonTerminalError":
+      return PP.hcat([
+        "The name ",
+        errorItem.name,
+        " is already defined as a non-terminal",
+        ScanpilerErrors.errorLocation(errorItem.location, fileName),
+      ]);
+    case "SymbolDefinedAsTerminalError":
+      return PP.hcat([
+        "No name ",
+        errorItem.name,
+        " is already defined as a terminal",
         ScanpilerErrors.errorLocation(errorItem.location, fileName),
       ]);
   }
