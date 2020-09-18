@@ -37,7 +37,7 @@ Deno.test("dynamic - scanner file exists", async () => {
 });
 
 Deno.test("dynamic - an error in the scanner file propogates", async () => {
-  assertTranslateErrors('uses "./test/broken.ll";', [{
+  await assertTranslateErrors('uses "./test/broken.ll";', [{
     tag: "ScannerDefinitionError",
     location: range(5, 1, 6, 22, 1, 23),
     fileName: "./test/broken.ll",
