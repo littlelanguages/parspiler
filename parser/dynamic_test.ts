@@ -145,29 +145,29 @@ Deno.test("dynamic - reference to an unknown symbol", async () => {
   ]);
 });
 
-Deno.test({
-  name: "dynamic - reference to non-terminal symbol",
-  async fn() {
-    await assertTranslation(
-      'uses "./test/simple.ll";\n' +
-        "Program: Names;\nNames: Identifier {Identifier};",
-      new Definition(
-        scannerDefinition,
-        [
-          new Production(
-            "Program",
-            new Identifier("Names"),
+Deno.test("dynamic - reference to non-terminal symbol", async () => {
+  await assertTranslation(
+    'uses "./test/simple.ll";\n' +
+      "Program: Names;\nNames: Identifier {Identifier};",
+    new Definition(
+      scannerDefinition,
+      [
+        new Production(
+          "Program",
+          new Identifier("Names"),
+        ),
+        new Production(
+          "Names",
+          new Sequence(
+            [
+              new Identifier("Identifier"),
+              new Many(new Identifier("Identifier")),
+            ],
           ),
-          new Production(
-            "Names",
-            new Sequence(
-              [new Identifier("Identifier"), new Many(new Identifier("Identifier"))],
-            ),
-          ),
-        ],
-      ),
-    );
-  },
+        ),
+      ],
+    ),
+  );
 });
 
 Deno.test({
