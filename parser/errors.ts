@@ -6,7 +6,8 @@ export type Errors = Array<ErrorItem>;
 
 export type ErrorItem =
   | ScannerDefinitionError
-  | ScannerDefinitionFileDoesNotExistError;
+  | ScannerDefinitionFileDoesNotExistError
+  | UnknownSymbolError;
 
 export type ScannerDefinitionError = {
   tag: "ScannerDefinitionError";
@@ -17,6 +18,12 @@ export type ScannerDefinitionError = {
 
 export type ScannerDefinitionFileDoesNotExistError = {
   tag: "ScannerDefinitionFileDoesNotExistError";
+  location: Location;
+  name: string;
+};
+
+export type UnknownSymbolError = {
+  tag: "UnknownSymbolError";
   location: Location;
   name: string;
 };
@@ -45,6 +52,12 @@ export function asDoc(
     case "ScannerDefinitionFileDoesNotExistError":
       return PP.hcat([
         "Unable to read the scanner definition file ",
+        errorItem.name,
+        ScanpilerErrors.errorLocation(errorItem.location, fileName),
+      ]);
+    case "UnknownSymbolError":
+      return PP.hcat([
+        "No terminal or non-terminal defined with the name ",
         errorItem.name,
         ScanpilerErrors.errorLocation(errorItem.location, fileName),
       ]);

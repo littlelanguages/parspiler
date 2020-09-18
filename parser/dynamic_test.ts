@@ -135,6 +135,16 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
   );
 });
 
+Deno.test("dynamic - reference to an unknown symbol", async () => {
+  await assertTranslateErrors('uses "./test/simple.ll";\nProduction: ID;', [
+    {
+      tag: "UnknownSymbolError",
+      location: range(37, 2, 13, 38, 2, 14),
+      name: "ID",
+    },
+  ]);
+});
+
 Deno.test({
   name: "dynamic - reference to non-terminal symbol",
   ignore: true,

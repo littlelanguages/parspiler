@@ -92,13 +92,21 @@ class Translate {
 
   private translateExpr(expr: AST.Expr): Expr {
     if (expr.tag == "ID") {
+      if (!this.nonTerminals.has(expr.id) && !this.terminals.has(expr.id)) {
+        this.errors.push({
+          tag: "UnknownSymbolError",
+          location: expr.location,
+          name: expr.id,
+        });
+      }
+
       return new Identifier(expr.id);
     } else if (expr.tag == "ParenExpr") {
       return this.translateExpr(expr.expr);
     } else if (expr.tag == "SequenceExpr") {
-      return new Sequence(expr.exprs.map(this.translateExpr));
+      return new Sequence(expr.exprs.map((e) => this.translateExpr(e)));
     } else if (expr.tag == "AlternativeExpr") {
-      return new Alternative(expr.exprs.map(this.translateExpr));
+      return new Alternative(expr.exprs.map((e) => this.translateExpr(e)));
     } else if (expr.tag == "ManyExpr") {
       return new Many(this.translateExpr(expr.expr));
     } else if (expr.tag == "OptionalExpr") {
