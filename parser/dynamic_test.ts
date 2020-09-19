@@ -243,6 +243,29 @@ Deno.test("dynamic - match literal strings with terminals", async () => {
   );
 });
 
+Deno.test("dynamic - create and match literal strings with terminals", async () => {
+  const scanner = scannerDefinition();
+
+  scanner.addToken("From", new LADefinition.LiteralStringRegEx("from"), 0);
+
+  await assertTranslation(
+    'uses "./test/simple.ll";\n' + 'Program: "from" ";" "from" ;',
+    new Definition(
+      scanner,
+      [
+        new Production(
+          "Program",
+          new Sequence([
+            new Identifier("From"),
+            new Identifier("Semicolon"),
+            new Identifier("From"),
+          ]),
+        ),
+      ],
+    ),
+  );
+});
+
 Deno.test("dynamic - resolve token name without clash", async () => {
   const scanner = scannerDefinition();
 
