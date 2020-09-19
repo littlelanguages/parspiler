@@ -221,7 +221,7 @@ Deno.test("dynamic - move literal strings into terminals", async () => {
   );
 });
 
-Deno.test("dynamic - resolve token name", async () => {
+Deno.test("dynamic - resolve token name without clash", async () => {
   const scanner = scannerDefinition();
 
   Assert.assertEquals(resolveTokenName(scanner, "hello"), "Hello");
@@ -231,6 +231,19 @@ Deno.test("dynamic - resolve token name", async () => {
     "LBracketRBracketBangAtHashDollarPercentCapRCurly",
   );
   Assert.assertEquals(resolveTokenName(scanner, "0..10"), "H0PeriodPeriod10");
+});
+
+Deno.test("dynamic - resolve token name with clash", async () => {
+  const scanner = scannerDefinition();
+
+  Assert.assertEquals(resolveTokenName(scanner, "Identifier"), "Identifier1");
+  
+  scanner.addToken(
+    "Identifier1",
+    new LADefinition.LiteralStringRegEx("Identifier"),
+  );
+  
+  Assert.assertEquals(resolveTokenName(scanner, "Identifier"), "Identifier2");
 });
 
 async function assertTranslation(content: string, definition: Definition) {

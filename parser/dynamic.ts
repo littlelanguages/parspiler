@@ -166,37 +166,52 @@ export function resolveTokenName(
     }
   }
 
-  return (candidateName[0] >= "0" && candidateName[0] <= "9")
+  candidateName = (candidateName[0] >= "0" && candidateName[0] <= "9")
     ? `H${candidateName}`
     : (candidateName[0] >= "a" && candidateName[0] <= "z")
     ? String.fromCharCode(candidateName.charCodeAt(0) - 32) +
       candidateName.substr(1)
     : candidateName;
+
+  if (scanner.hasToken(candidateName)) {
+    let lp = 1;
+
+    while (true) {
+      const testName = `${candidateName}${lp}`;
+      if (scanner.hasToken(testName)) {
+        lp += 1;
+      } else {
+        return testName;
+      }
+    }
+  } else {
+    return candidateName;
+  }
 }
 
 const characterMappings = [
   "Space", // 32
-  "Bang", // 33
-  "Quote", // 34
-  "Hash", // 35
-  "Dollar", // 36
-  "Percent", // 37
-  "Ampersand", // 38
-  "Tick", // 39
-  "LParen", // 40
-  "RParen", // 41
-  "Star", // 42
-  "Plus", // 43
-  "Comma", // 44
-  "Dash", // 45
-  "Period", // 46
-  "Slash", // 47
-  "0", // 48
-  "1", // 49
-  "2", // 50
-  "3", // 51
-  "4", // 52
-  "5", // 53
+  "Bang",
+  "Quote",
+  "Hash",
+  "Dollar",
+  "Percent",
+  "Ampersand",
+  "Tick",
+  "LParen",
+  "RParen",
+  "Star",
+  "Plus",
+  "Comma",
+  "Dash",
+  "Period",
+  "Slash",
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
   "6",
   "7",
   "8",
