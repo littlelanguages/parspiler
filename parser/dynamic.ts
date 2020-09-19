@@ -118,7 +118,10 @@ class Translate {
       return new Identifier(expr.id);
     } else if (expr.tag == "LiteralString") {
       return new Identifier(
-        addLiteralToken(this.scannerDefinition, expr.value),
+        addLiteralToken(
+          this.scannerDefinition,
+          dropRight(1, dropLeft(1, expr.value)),
+        ),
       );
     } else if (expr.tag == "ParenExpr") {
       return this.translateExpr(expr.expr);
@@ -140,11 +143,13 @@ function addLiteralToken(
   scanner: ScanpilerDefinition.Definition,
   text: string,
 ): string {
+  const tokenName = resolveTokenName(scanner, text);
+
   scanner.tokens.unshift(
-    ["Hello", new ScanpilerDefinition.LiteralStringRegEx("hello")],
+    [tokenName, new ScanpilerDefinition.LiteralStringRegEx(text)],
   );
 
-  return "Hello";
+  return tokenName;
 }
 
 export function resolveTokenName(

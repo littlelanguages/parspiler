@@ -204,17 +204,21 @@ Deno.test("dynamic - move literal strings into terminals", async () => {
   const scanner = scannerDefinition();
 
   scanner.tokens.unshift(
+    ["Period", new LADefinition.LiteralStringRegEx(".")],
     ["Hello", new LADefinition.LiteralStringRegEx("hello")],
   );
 
   await assertTranslation(
-    'uses "./test/simple.ll";\n' + 'Program: "hello";',
+    'uses "./test/simple.ll";\n' + 'Program: "hello" "." ;',
     new Definition(
       scanner,
       [
         new Production(
           "Program",
-          new Identifier("Hello"),
+          new Sequence([
+            new Identifier("Hello"),
+            new Identifier("Period"),
+          ]),
         ),
       ],
     ),
