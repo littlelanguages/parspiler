@@ -143,16 +143,24 @@ function addLiteralToken(
   scanner: ScanpilerDefinition.Definition,
   text: string,
 ): string {
-  const tokenName = resolveTokenName(scanner, text);
+  const token = scanner.literalMatch(text);
 
-  scanner.tokens.unshift(
-    [tokenName, new ScanpilerDefinition.LiteralStringRegEx(text)],
-  );
+  if (token == undefined) {
+    const tokenName = calculateTokenName(scanner, text);
 
-  return tokenName;
+    scanner.addToken(
+      tokenName,
+      new ScanpilerDefinition.LiteralStringRegEx(text),
+      0,
+    );
+
+    return tokenName;
+  } else {
+    return token[0];
+  }
 }
 
-export function resolveTokenName(
+export function calculateTokenName(
   scanner: ScanpilerDefinition.Definition,
   text: string,
 ): string {

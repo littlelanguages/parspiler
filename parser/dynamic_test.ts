@@ -3,7 +3,7 @@ import { left, right } from "../data/either.ts";
 import * as Assert from "../testing/asserts.ts";
 import * as Errors from "./errors.ts";
 
-import { resolveTokenName, translate } from "./dynamic.ts";
+import { calculateTokenName, translate } from "./dynamic.ts";
 import { range } from "./location.ts";
 import {
   Alternative,
@@ -203,10 +203,8 @@ Deno.test("dynamic - duplicate non-terminal name", async () => {
 Deno.test("dynamic - move literal strings into terminals", async () => {
   const scanner = scannerDefinition();
 
-  scanner.tokens.unshift(
-    ["Period", new LADefinition.LiteralStringRegEx(".")],
-    ["Hello", new LADefinition.LiteralStringRegEx("hello")],
-  );
+  scanner.addToken("Period", new LADefinition.LiteralStringRegEx("."), 0);
+  scanner.addToken("Hello", new LADefinition.LiteralStringRegEx("hello"), 1);
 
   await assertTranslation(
     'uses "./test/simple.ll";\n' + 'Program: "hello" "." ;',
@@ -225,29 +223,49 @@ Deno.test("dynamic - move literal strings into terminals", async () => {
   );
 });
 
+Deno.test("dynamic - match literal strings with terminals", async () => {
+  const scanner = scannerDefinition();
+
+  await assertTranslation(
+    'uses "./test/simple.ll";\n' + 'Program: "uses" ";" ;',
+    new Definition(
+      scanner,
+      [
+        new Production(
+          "Program",
+          new Sequence([
+            new Identifier("Uses"),
+            new Identifier("Semicolon"),
+          ]),
+        ),
+      ],
+    ),
+  );
+});
+
 Deno.test("dynamic - resolve token name without clash", async () => {
   const scanner = scannerDefinition();
 
-  Assert.assertEquals(resolveTokenName(scanner, "hello"), "Hello");
-  Assert.assertEquals(resolveTokenName(scanner, "HELLO"), "HELLO");
+  Assert.assertEquals(calculateTokenName(scanner, "hello"), "Hello");
+  Assert.assertEquals(calculateTokenName(scanner, "HELLO"), "HELLO");
   Assert.assertEquals(
-    resolveTokenName(scanner, "[]!@#$%^}"),
+    calculateTokenName(scanner, "[]!@#$%^}"),
     "LBracketRBracketBangAtHashDollarPercentCapRCurly",
   );
-  Assert.assertEquals(resolveTokenName(scanner, "0..10"), "H0PeriodPeriod10");
+  Assert.assertEquals(calculateTokenName(scanner, "0..10"), "H0PeriodPeriod10");
 });
 
 Deno.test("dynamic - resolve token name with clash", async () => {
   const scanner = scannerDefinition();
 
-  Assert.assertEquals(resolveTokenName(scanner, "Identifier"), "Identifier1");
+  Assert.assertEquals(calculateTokenName(scanner, "Identifier"), "Identifier1");
 
   scanner.addToken(
     "Identifier1",
     new LADefinition.LiteralStringRegEx("Identifier"),
   );
 
-  Assert.assertEquals(resolveTokenName(scanner, "Identifier"), "Identifier2");
+  Assert.assertEquals(calculateTokenName(scanner, "Identifier"), "Identifier2");
 });
 
 async function assertTranslation(content: string, definition: Definition) {
