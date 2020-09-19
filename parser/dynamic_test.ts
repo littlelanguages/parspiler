@@ -7,6 +7,7 @@ import { calculateTokenName, translate } from "./dynamic.ts";
 import { range } from "./location.ts";
 import {
   Alternative,
+  calculateFirstFollow,
   Definition,
   Identifier,
   Many,
@@ -289,6 +290,45 @@ Deno.test("dynamic - resolve token name with clash", async () => {
   );
 
   Assert.assertEquals(calculateTokenName(scanner, "Identifier"), "Identifier2");
+});
+
+Deno.test("dynamic - calculateFirstFollow - left recursive check", () => {
+  const scanner = scannerDefinition();
+
+  Assert.assertEquals(
+    calculateFirstFollow(
+      new Definition(
+        scanner,
+        [new Production("Program", new Identifier("Program"))],
+      ),
+    ),
+    [{
+      tag: "LeftRecursiveGrammarError",
+      name: "Program",
+    }],
+  );
+
+  Assert.assertEquals(
+    calculateFirstFollow(
+      new Definition(
+        scanner,
+        [
+          new Production("Program", new Identifier("Fred")),
+          new Production("Fred", new Identifier("Program")),
+        ],
+      ),
+    ),
+    [
+      {
+        tag: "LeftRecursiveGrammarError",
+        name: "Program",
+      },
+      {
+        tag: "LeftRecursiveGrammarError",
+        name: "Fred",
+      },
+    ],
+  );
 });
 
 async function assertTranslation(content: string, definition: Definition) {
