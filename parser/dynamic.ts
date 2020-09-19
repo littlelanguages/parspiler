@@ -116,6 +116,8 @@ class Translate {
       }
 
       return new Identifier(expr.id);
+    } else if (expr.tag == "LiteralString") {
+      return new Identifier (addLiteralToken(this.scannerDefinition, expr.value));
     } else if (expr.tag == "ParenExpr") {
       return this.translateExpr(expr.expr);
     } else if (expr.tag == "SequenceExpr") {
@@ -130,4 +132,12 @@ class Translate {
       throw new Error(`TBD: translateExpr: ${expr}`);
     }
   }
+}
+
+function addLiteralToken(scanner: ScanpilerDefinition.Definition, text: string): string {
+  scanner.tokens.unshift(
+    ["Hello", new ScanpilerDefinition.LiteralStringRegEx("hello")],
+  );
+
+  return "Hello";
 }
