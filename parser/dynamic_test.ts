@@ -184,21 +184,18 @@ Deno.test("dynamic - non-terminal and terminal symbol clash", async () => {
   );
 });
 
-Deno.test({
-  name: "dynamic - duplicate non-terminal name",
-  async fn() {
-    await assertTranslateErrors(
-      'uses "./test/simple.ll";\n' +
-        "Program: Identifier;\nProgram: Identifier {Identifier};",
-      [
-        {
-          tag: "SymbolDefinedAsNonTerminalError",
-          location: range(46, 3, 1, 52, 3, 7),
-          name: "Program",
-        },
-      ],
-    );
-  },
+Deno.test("dynamic - duplicate non-terminal name", async () => {
+  await assertTranslateErrors(
+    'uses "./test/simple.ll";\n' +
+      "Program: Identifier;\nProgram: Identifier {Identifier};",
+    [
+      {
+        tag: "SymbolDefinedAsNonTerminalError",
+        location: range(46, 3, 1, 52, 3, 7),
+        name: "Program",
+      },
+    ],
+  );
 });
 
 async function assertTranslation(content: string, definition: Definition) {
