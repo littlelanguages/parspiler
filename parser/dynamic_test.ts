@@ -3,7 +3,7 @@ import { left, right } from "../data/either.ts";
 import * as Assert from "../testing/asserts.ts";
 import * as Errors from "./errors.ts";
 
-import { translate } from "./dynamic.ts";
+import { resolveTokenName, translate } from "./dynamic.ts";
 import { range } from "./location.ts";
 import {
   Alternative,
@@ -219,6 +219,18 @@ Deno.test("dynamic - move literal strings into terminals", async () => {
       ],
     ),
   );
+});
+
+Deno.test("dynamic - resolve token name", async () => {
+  const scanner = scannerDefinition();
+
+  Assert.assertEquals(resolveTokenName(scanner, "hello"), "Hello");
+  Assert.assertEquals(resolveTokenName(scanner, "HELLO"), "HELLO");
+  Assert.assertEquals(
+    resolveTokenName(scanner, "[]!@#$%^}"),
+    "LBracketRBracketBangAtHashDollarPercentCapRCurly",
+  );
+  Assert.assertEquals(resolveTokenName(scanner, "0..10"), "H0PeriodPeriod10");
 });
 
 async function assertTranslation(content: string, definition: Definition) {

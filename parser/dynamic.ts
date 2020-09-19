@@ -117,7 +117,9 @@ class Translate {
 
       return new Identifier(expr.id);
     } else if (expr.tag == "LiteralString") {
-      return new Identifier (addLiteralToken(this.scannerDefinition, expr.value));
+      return new Identifier(
+        addLiteralToken(this.scannerDefinition, expr.value),
+      );
     } else if (expr.tag == "ParenExpr") {
       return this.translateExpr(expr.expr);
     } else if (expr.tag == "SequenceExpr") {
@@ -134,10 +136,138 @@ class Translate {
   }
 }
 
-function addLiteralToken(scanner: ScanpilerDefinition.Definition, text: string): string {
+function addLiteralToken(
+  scanner: ScanpilerDefinition.Definition,
+  text: string,
+): string {
   scanner.tokens.unshift(
     ["Hello", new ScanpilerDefinition.LiteralStringRegEx("hello")],
   );
 
   return "Hello";
 }
+
+export function resolveTokenName(
+  scanner: ScanpilerDefinition.Definition,
+  text: string,
+): string {
+  let candidateName = "";
+
+  function appendName(name: string) {
+    candidateName = candidateName + name;
+  }
+
+  for (const c of text) {
+    const cc = c.charCodeAt(0);
+    if (cc < 32 || cc > 127) {
+      appendName("H" + cc);
+    } else {
+      appendName(characterMappings[cc - 32]);
+    }
+  }
+
+  return (candidateName[0] >= "0" && candidateName[0] <= "9")
+    ? `H${candidateName}`
+    : (candidateName[0] >= "a" && candidateName[0] <= "z")
+    ? String.fromCharCode(candidateName.charCodeAt(0) - 32) +
+      candidateName.substr(1)
+    : candidateName;
+}
+
+const characterMappings = [
+  "Space", // 32
+  "Bang", // 33
+  "Quote", // 34
+  "Hash", // 35
+  "Dollar", // 36
+  "Percent", // 37
+  "Ampersand", // 38
+  "Tick", // 39
+  "LParen", // 40
+  "RParen", // 41
+  "Star", // 42
+  "Plus", // 43
+  "Comma", // 44
+  "Dash", // 45
+  "Period", // 46
+  "Slash", // 47
+  "0", // 48
+  "1", // 49
+  "2", // 50
+  "3", // 51
+  "4", // 52
+  "5", // 53
+  "6",
+  "7",
+  "8",
+  "9",
+  "Colon",
+  "Semicolon",
+  "LessThan",
+  "Equal",
+  "GreaterThan",
+  "Question",
+  "At",
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
+  "LBracket",
+  "Backslash",
+  "RBracket",
+  "Cap",
+  "Underscore",
+  "Backtick",
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "j",
+  "k",
+  "l",
+  "m",
+  "n",
+  "o",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+  "w",
+  "x",
+  "y",
+  "z",
+  "LCurly",
+  "Bar",
+  "RCurly",
+  "Tilde",
+];
