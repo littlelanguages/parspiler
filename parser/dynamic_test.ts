@@ -237,12 +237,12 @@ Deno.test("dynamic - resolve token name with clash", async () => {
   const scanner = scannerDefinition();
 
   Assert.assertEquals(resolveTokenName(scanner, "Identifier"), "Identifier1");
-  
+
   scanner.addToken(
     "Identifier1",
     new LADefinition.LiteralStringRegEx("Identifier"),
   );
-  
+
   Assert.assertEquals(resolveTokenName(scanner, "Identifier"), "Identifier2");
 });
 
