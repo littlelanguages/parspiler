@@ -138,7 +138,7 @@ type LeftRecursiveGrammarError = {
 
 export function calculateFirstFollow(
   definition: Definition,
-): [Set<string>, Set<string>] | FirstFollowErrors {
+): [Map<string, Set<string>>, Map<string, Set<string>>] | FirstFollowErrors {
   return new FirstFollowCalculation(definition).process();
 }
 
@@ -147,6 +147,7 @@ class FirstFollowCalculation {
   private errors: FirstFollowErrors = [];
   private terminalNames: Set<string>;
   private nonTerminalNames: Set<string>;
+  private emptyNonTerminals: Set<string> = Set.emptySet as Set<string>;
 
   constructor(definition: Definition) {
     this.definition = definition;
@@ -155,11 +156,21 @@ class FirstFollowCalculation {
     this.nonTerminalNames = definition.nonTerminalNames();
   }
 
-  process(): [Set<string>, Set<string>] | FirstFollowErrors {
+  process():
+    | [Map<string, Set<string>>, Map<string, Set<string>>]
+    | FirstFollowErrors {
     this.validateNotLeftRecursive();
 
+    this.emptyNonTerminals = Set.setOf(
+      [...this.calculateEmptyNonTerminals()].filter((x) => x[1]).map((x) =>
+        x[0]
+      ),
+    );
+    const firsts = this.calculateFirst();
+    const follows = this.calculateFollow(firsts);
+
     if (this.errors.length == 0) {
-      return [Set.emptySet as Set<string>, Set.emptySet as Set<string>];
+      return [firsts, follows];
     } else {
       return this.errors;
     }
@@ -207,5 +218,265 @@ class FirstFollowCalculation {
         this.errors.push({ tag: "LeftRecursiveGrammarError", name: dep[0] });
       }
     }
+  }
+
+  private calculateEmptyNonTerminals(): Map<string, boolean> {
+    const emptyNonTerminals: Map<string, boolean> = new Map();
+
+    const isExprNullable = (e: Expr): boolean | undefined => {
+      if (e instanceof Identifier) {
+        return (this.terminalNames.has(e.name))
+          ? false
+          : emptyNonTerminals.get(e.name);
+      } else if (e instanceof Sequence) {
+        for (const es of e.exprs) {
+          const esNullable = isExprNullable(es);
+
+          if (esNullable == undefined) {
+            return undefined;
+          } else if (!esNullable) {
+            return false;
+          }
+        }
+        return true;
+      } else if (e instanceof Alternative) {
+        const isAlternativesNullable = e.exprs.map((es) => isExprNullable(es));
+
+        if (isAlternativesNullable.some((x) => x == true)) {
+          return true;
+        } else if (isAlternativesNullable.some((x) => x == undefined)) {
+          return undefined;
+        } else {
+          return false;
+        }
+      } else {
+        return true;
+      }
+    };
+
+    while (true) {
+      const sizeOfEmptyNonTerminals = emptyNonTerminals.size;
+
+      for (const p of this.definition.productions) {
+        if (!emptyNonTerminals.has(p.lhs)) {
+          const v = isExprNullable(p.expr);
+
+          if (v != undefined) {
+            emptyNonTerminals.set(p.lhs, v);
+          }
+        }
+      }
+
+      if (sizeOfEmptyNonTerminals == emptyNonTerminals.size) {
+        break;
+      }
+    }
+
+    return emptyNonTerminals;
+  }
+
+  private isExprNullable(e: Expr): boolean {
+    if (e instanceof Identifier) {
+      return this.emptyNonTerminals.has(e.name);
+    } else if (e instanceof Sequence) {
+      return Array.and(e.exprs.map((es) => this.isExprNullable(es)));
+    } else if (e instanceof Alternative) {
+      return e.exprs.map((es) => this.isExprNullable(es)).some((x) => x);
+    } else {
+      return true;
+    }
+  }
+
+  private calculateInitialFirst(e: Expr): Set<string> {
+    if (e instanceof Identifier) {
+      return Set.setOf(e.name);
+    } else if (e instanceof Sequence) {
+      let result = Set.emptySet as Set<string>;
+      for (const es of e.exprs) {
+        result = Set.union(this.calculateInitialFirst(es), result);
+        if (!this.isExprNullable(es)) {
+          break;
+        }
+      }
+      return result;
+    } else if (e instanceof Alternative) {
+      return Array.union(e.exprs.map((es) => this.calculateInitialFirst(es)));
+    } else if (e instanceof Many) {
+      return this.calculateInitialFirst(e.expr);
+    } else {
+      return this.calculateInitialFirst((e as Optional).expr);
+    }
+  }
+
+  private calculateFirst(): Map<string, Set<string>> {
+    let firsts: Map<string, Set<string>> = new Map(
+      this.definition.productions.map((
+        p,
+      ) => [p.lhs, this.calculateInitialFirst(p.expr)]),
+    );
+
+    while (true) {
+      let changed = false;
+      for (const p of firsts) {
+        const nonTerminals = Set.filter(
+          (e) => this.nonTerminalNames.has(e),
+          p[1],
+        );
+        if (!Set.isEmpty(nonTerminals)) {
+          const terminals = Set.filter((e) => this.terminalNames.has(e), p[1]);
+
+          const newFirsts = Set.union(
+            terminals,
+            Array.union([...nonTerminals].map((nt) => firsts.get(nt)!)),
+          );
+
+          if (!Set.isEqual(newFirsts, p[1])) {
+            changed = true;
+            firsts.set(p[0], newFirsts);
+          }
+        }
+      }
+
+      if (!changed) {
+        break;
+      }
+    }
+
+    this.emptyNonTerminals.forEach((nt) =>
+      firsts.set(nt, Set.union(firsts.get(nt)!, Set.setOf("")))
+    );
+
+    return firsts;
+  }
+
+  private calculateInitialFollow(
+    firsts: Map<string, Set<string>>,
+    follows: Map<string, Set<string>>,
+    e: Expr,
+    nextFirst: Set<string>,
+  ) {
+    if (e instanceof Identifier) {
+      if (this.nonTerminalNames.has(e.name)) {
+        const follow = (nextFirst.has(""))
+          ? Set.minus(nextFirst, Set.setOf(""))
+          : nextFirst;
+        const currentFollows = follows.get(e.name);
+        const nextFollows = (currentFollows == undefined)
+          ? follow
+          : Set.union(currentFollows, follow);
+
+        follows.set(e.name, nextFollows);
+      }
+    } else if (e instanceof Sequence) {
+      let exprs = e.exprs;
+
+      while (exprs.length > 0) {
+        const hdExpr = exprs[0];
+        const tlExprs = exprs.slice(1);
+        const tlFirst = first(firsts, new Sequence(tlExprs));
+
+        if (tlFirst.has("")) {
+          this.calculateInitialFollow(
+            firsts,
+            follows,
+            hdExpr,
+            Set.union(nextFirst, Set.minus(tlFirst, Set.setOf(""))),
+          );
+        } else {
+          this.calculateInitialFollow(firsts, follows, hdExpr, tlFirst);
+        }
+
+        exprs = tlExprs;
+      }
+    } else if (e instanceof Alternative) {
+      e.exprs.forEach((es) =>
+        this.calculateInitialFollow(firsts, follows, es, nextFirst)
+      );
+    } else if (e instanceof Many) {
+      this.calculateInitialFollow(firsts, follows, e.expr, nextFirst);
+    } else {
+      this.calculateInitialFollow(
+        firsts,
+        follows,
+        (e as Optional).expr,
+        nextFirst,
+      );
+    }
+  }
+
+  private calculateFollow(
+    first: Map<string, Set<string>>,
+  ): Map<string, Set<string>> {
+    let follows: Map<string, Set<string>> = new Map(
+      [[this.definition.productions[0].lhs, Set.setOf("$")]],
+    );
+
+    this.definition.productions.forEach((p) =>
+      this.calculateInitialFollow(
+        first,
+        follows,
+        p.expr,
+        Set.setOf(p.lhs),
+      )
+    );
+
+    while (true) {
+      let changed = false;
+      for (const p of follows) {
+        const nonTerminals = Set.filter(
+          (e) => this.nonTerminalNames.has(e),
+          p[1],
+        );
+        if (!Set.isEmpty(nonTerminals)) {
+          const terminals = Set.filter((e) => this.terminalNames.has(e), p[1]);
+
+          const newFollows = Set.minus(
+            Set.union(
+              terminals,
+              Array.union([...nonTerminals].map((nt) => follows.get(nt)!)),
+            ),
+            Set.setOf(p[0]),
+          );
+
+          if (!Set.isEqual(newFollows, p[1])) {
+            changed = true;
+            follows.set(p[0], newFollows);
+          }
+        }
+      }
+
+      if (!changed) {
+        break;
+      }
+    }
+
+    return follows;
+  }
+}
+
+export function first(firsts: Map<string, Set<string>>, e: Expr): Set<string> {
+  if (e instanceof Identifier) {
+    const f = firsts.get(e.name);
+    if (f == undefined) {
+      return Set.setOf(e.name);
+    } else return f;
+  } else if (e instanceof Sequence) {
+    let result = Set.emptySet as Set<string>;
+    for (const es of e.exprs) {
+      const esFirst = first(firsts, es);
+
+      if (esFirst.has("")) {
+        result = Set.union(Set.minus(esFirst, Set.setOf("")), result);
+      } else {
+        return Set.union(esFirst, result);
+      }
+    }
+    return Set.union(result, Set.setOf(""));
+  } else if (e instanceof Alternative) {
+    return Array.union(e.exprs.map((es) => first(firsts, es)));
+  } else if (e instanceof Many) {
+    return Set.union(first(firsts, e.expr), Set.setOf(""));
+  } else {
+    return Set.union(first(firsts, ((e as Optional).expr)), Set.setOf(""));
   }
 }
