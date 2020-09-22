@@ -169,7 +169,7 @@ class FirstFollowCalculation {
     const firsts = this.calculateFirst();
     const follows = this.calculateFollow(firsts);
 
-    if (this.errors.length == 0) {
+    if (this.errors.length === 0) {
       return [firsts, follows];
     } else {
       return this.errors;
@@ -229,26 +229,19 @@ class FirstFollowCalculation {
           ? false
           : emptyNonTerminals.get(e.name);
       } else if (e instanceof Sequence) {
-        for (const es of e.exprs) {
-          const esNullable = isExprNullable(es);
+        const isSequenceNullable = e.exprs.map((es) => isExprNullable(es));
 
-          if (esNullable == undefined) {
-            return undefined;
-          } else if (!esNullable) {
-            return false;
-          }
-        }
-        return true;
+        return (isSequenceNullable.some((x) => x === undefined))
+          ? undefined
+          : isSequenceNullable.every((x) => x === true);
       } else if (e instanceof Alternative) {
         const isAlternativesNullable = e.exprs.map((es) => isExprNullable(es));
 
-        if (isAlternativesNullable.some((x) => x == true)) {
-          return true;
-        } else if (isAlternativesNullable.some((x) => x == undefined)) {
-          return undefined;
-        } else {
-          return false;
-        }
+        return (isAlternativesNullable.some((x) => x === true))
+          ? true
+          : (isAlternativesNullable.some((x) => x === undefined))
+          ? undefined
+          : false;
       } else {
         return true;
       }
@@ -261,13 +254,13 @@ class FirstFollowCalculation {
         if (!emptyNonTerminals.has(p.lhs)) {
           const v = isExprNullable(p.expr);
 
-          if (v != undefined) {
+          if (v !== undefined) {
             emptyNonTerminals.set(p.lhs, v);
           }
         }
       }
 
-      if (sizeOfEmptyNonTerminals == emptyNonTerminals.size) {
+      if (sizeOfEmptyNonTerminals === emptyNonTerminals.size) {
         break;
       }
     }
@@ -343,7 +336,7 @@ class FirstFollowCalculation {
     }
 
     this.emptyNonTerminals.forEach((nt) =>
-      firsts.set(nt, Set.union(firsts.get(nt)!, Set.setOf("")))
+      firsts.set(nt, Set.union(firsts.get(nt)!, epsilonSet))
     );
 
     return firsts;
@@ -358,10 +351,10 @@ class FirstFollowCalculation {
     if (e instanceof Identifier) {
       if (this.nonTerminalNames.has(e.name)) {
         const follow = (nextFirst.has(""))
-          ? Set.minus(nextFirst, Set.setOf(""))
+          ? Set.minus(nextFirst, epsilonSet)
           : nextFirst;
         const currentFollows = follows.get(e.name);
-        const nextFollows = (currentFollows == undefined)
+        const nextFollows = (currentFollows === undefined)
           ? follow
           : Set.union(currentFollows, follow);
 
@@ -371,8 +364,7 @@ class FirstFollowCalculation {
       let exprs = e.exprs;
 
       while (exprs.length > 0) {
-        const hdExpr = exprs[0];
-        const tlExprs = exprs.slice(1);
+        const [hdExpr, ...tlExprs] = exprs;
         const tlFirst = first(firsts, new Sequence(tlExprs));
 
         if (tlFirst.has("")) {
@@ -380,7 +372,7 @@ class FirstFollowCalculation {
             firsts,
             follows,
             hdExpr,
-            Set.union(nextFirst, Set.minus(tlFirst, Set.setOf(""))),
+            Set.union(nextFirst, Set.minus(tlFirst, epsilonSet)),
           );
         } else {
           this.calculateInitialFollow(firsts, follows, hdExpr, tlFirst);
@@ -405,7 +397,7 @@ class FirstFollowCalculation {
   }
 
   private calculateFollow(
-    first: Map<string, Set<string>>,
+    firsts: Map<string, Set<string>>,
   ): Map<string, Set<string>> {
     let follows: Map<string, Set<string>> = new Map(
       [[this.definition.productions[0].lhs, Set.setOf("$")]],
@@ -413,7 +405,7 @@ class FirstFollowCalculation {
 
     this.definition.productions.forEach((p) =>
       this.calculateInitialFollow(
-        first,
+        firsts,
         follows,
         p.expr,
         Set.setOf(p.lhs),
@@ -457,26 +449,26 @@ class FirstFollowCalculation {
 export function first(firsts: Map<string, Set<string>>, e: Expr): Set<string> {
   if (e instanceof Identifier) {
     const f = firsts.get(e.name);
-    if (f == undefined) {
-      return Set.setOf(e.name);
-    } else return f;
+    return (f === undefined) ? Set.setOf(e.name) : f;
   } else if (e instanceof Sequence) {
     let result = Set.emptySet as Set<string>;
     for (const es of e.exprs) {
       const esFirst = first(firsts, es);
 
       if (esFirst.has("")) {
-        result = Set.union(Set.minus(esFirst, Set.setOf("")), result);
+        result = Set.union(Set.minus(esFirst, epsilonSet), result);
       } else {
         return Set.union(esFirst, result);
       }
     }
-    return Set.union(result, Set.setOf(""));
+    return Set.union(result, epsilonSet);
   } else if (e instanceof Alternative) {
     return Array.union(e.exprs.map((es) => first(firsts, es)));
   } else if (e instanceof Many) {
-    return Set.union(first(firsts, e.expr), Set.setOf(""));
+    return Set.union(first(firsts, e.expr), epsilonSet);
   } else {
-    return Set.union(first(firsts, ((e as Optional).expr)), Set.setOf(""));
+    return Set.union(first(firsts, ((e as Optional).expr)), epsilonSet);
   }
 }
+
+const epsilonSet = Set.setOf("");
