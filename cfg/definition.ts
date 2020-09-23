@@ -35,8 +35,6 @@ export class Production {
 }
 
 export interface Expr {
-  leftRecursionDependencies(): Set<string>;
-  isEpsilonable(): boolean;
 }
 
 export class Identifier implements Expr {
@@ -44,14 +42,6 @@ export class Identifier implements Expr {
 
   constructor(name: string) {
     this.name = name;
-  }
-
-  leftRecursionDependencies(): Set<string> {
-    return Set.setOf(this.name);
-  }
-
-  isEpsilonable(): boolean {
-    return false;
   }
 }
 
@@ -61,22 +51,6 @@ export class Sequence implements Expr {
   constructor(exprs: Array<Expr>) {
     this.exprs = exprs;
   }
-
-  leftRecursionDependencies(): Set<string> {
-    let result = Set.emptySet as Set<string>;
-
-    for (const e of this.exprs) {
-      result = Set.union(result, e.leftRecursionDependencies());
-      if (!e.isEpsilonable()) {
-        return result;
-      }
-    }
-    return result;
-  }
-
-  isEpsilonable(): boolean {
-    return Array.and(this.exprs.map((e) => e.isEpsilonable()));
-  }
 }
 
 export class Alternative implements Expr {
@@ -84,14 +58,6 @@ export class Alternative implements Expr {
 
   constructor(exprs: Array<Expr>) {
     this.exprs = exprs;
-  }
-
-  leftRecursionDependencies(): Set<string> {
-    return Array.union(this.exprs.map((e) => e.leftRecursionDependencies()));
-  }
-
-  isEpsilonable(): boolean {
-    return Array.or(this.exprs.map((e) => e.isEpsilonable()));
   }
 }
 
@@ -101,14 +67,6 @@ export class Many implements Expr {
   constructor(expr: Expr) {
     this.expr = expr;
   }
-
-  leftRecursionDependencies(): Set<string> {
-    return this.expr.leftRecursionDependencies();
-  }
-
-  isEpsilonable(): boolean {
-    return true;
-  }
 }
 
 export class Optional implements Expr {
@@ -117,15 +75,41 @@ export class Optional implements Expr {
   constructor(expr: Expr) {
     this.expr = expr;
   }
+}
 
-  leftRecursionDependencies(): Set<string> {
-    return this.expr.leftRecursionDependencies();
+const leftRecursionDependencies = (e: Expr): Set<string> => {
+  if (e instanceof Identifier) {
+    return Set.setOf(e.name);
+  } else if (e instanceof Sequence) {
+    let result = Set.emptySet as Set<string>;
+
+    for (const es of e.exprs) {
+      result = Set.union(result, leftRecursionDependencies(es));
+      if (!isEpsilonable(e)) {
+        return result;
+      }
+    }
+    return result;
+  } else if (e instanceof Alternative) {
+    return Array.union(e.exprs.map(leftRecursionDependencies));
+  } else if (e instanceof Many) {
+    return leftRecursionDependencies(e.expr);
+  } else {
+    return leftRecursionDependencies((e as Optional).expr);
   }
+};
 
-  isEpsilonable(): boolean {
+const isEpsilonable = (e: Expr): boolean => {
+  if (e instanceof Identifier) {
+    return false;
+  } else if (e instanceof Sequence) {
+    return Array.and(e.exprs.map(isEpsilonable));
+  } else if (e instanceof Alternative) {
+    return Array.or(e.exprs.map(isEpsilonable));
+  } else {
     return true;
   }
-}
+};
 
 type FirstFollowErrors = Array<FirstFollowError>;
 
@@ -183,7 +167,7 @@ class FirstFollowCalculation {
       ) => [
         p.lhs,
         Set.intersection(
-          p.expr.leftRecursionDependencies(),
+          leftRecursionDependencies(p.expr),
           this.nonTerminalNames,
         ),
       ]));
