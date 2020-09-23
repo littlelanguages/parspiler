@@ -10,8 +10,8 @@ import {
   mkIdentifier,
   mkMany,
   mkOptional,
+  mkProduction,
   mkSequence,
-  Production,
 } from "../cfg/definition.ts";
 import { Dynamic, Definition as LADefinition } from "../scanpiler.ts";
 
@@ -58,7 +58,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
     new Definition(
       scannerDefinition(),
       [
-        new Production(
+        mkProduction(
           "Program",
           mkIdentifier("Identifier"),
         ),
@@ -71,7 +71,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
     new Definition(
       scannerDefinition(),
       [
-        new Production(
+        mkProduction(
           "Program",
           mkSequence(
             [mkIdentifier("Identifier"), mkIdentifier("Identifier")],
@@ -86,7 +86,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
     new Definition(
       scannerDefinition(),
       [
-        new Production(
+        mkProduction(
           "Program",
           mkMany(mkIdentifier("Identifier")),
         ),
@@ -99,7 +99,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
     new Definition(
       scannerDefinition(),
       [
-        new Production(
+        mkProduction(
           "Program",
           mkOptional(mkIdentifier("Identifier")),
         ),
@@ -112,7 +112,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
     new Definition(
       scannerDefinition(),
       [
-        new Production(
+        mkProduction(
           "Program",
           mkIdentifier("Identifier"),
         ),
@@ -125,7 +125,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
     new Definition(
       scannerDefinition(),
       [
-        new Production(
+        mkProduction(
           "Program",
           mkAlternative(
             [mkIdentifier("Identifier"), mkIdentifier("Identifier")],
@@ -153,11 +153,11 @@ Deno.test("dynamic - reference to non-terminal symbol", async () => {
     new Definition(
       scannerDefinition(),
       [
-        new Production(
+        mkProduction(
           "Program",
           mkIdentifier("Names"),
         ),
-        new Production(
+        mkProduction(
           "Names",
           mkSequence(
             [
@@ -210,7 +210,7 @@ Deno.test("dynamic - move literal strings into terminals", async () => {
     new Definition(
       scanner,
       [
-        new Production(
+        mkProduction(
           "Program",
           mkSequence([
             mkIdentifier("Hello"),
@@ -230,7 +230,7 @@ Deno.test("dynamic - match literal strings with terminals", async () => {
     new Definition(
       scanner,
       [
-        new Production(
+        mkProduction(
           "Program",
           mkSequence([
             mkIdentifier("Uses"),
@@ -252,7 +252,7 @@ Deno.test("dynamic - create and match literal strings with terminals", async () 
     new Definition(
       scanner,
       [
-        new Production(
+        mkProduction(
           "Program",
           mkSequence([
             mkIdentifier("From"),

@@ -6,8 +6,8 @@ import {
   Definition,
   mkIdentifier,
   mkOptional,
+  mkProduction,
   mkSequence,
-  Production,
 } from "./definition.ts";
 import { Dynamic, Definition as LADefinition } from "../scanpiler.ts";
 
@@ -24,7 +24,7 @@ Deno.test("definition - calculateFirstFollow - left recursive check", () => {
     calculateFirstFollow(
       new Definition(
         scanner,
-        [new Production("Program", { tag: "Identifier", name: "Program" })],
+        [mkProduction("Program", { tag: "Identifier", name: "Program" })],
       ),
     ),
     [{
@@ -38,8 +38,8 @@ Deno.test("definition - calculateFirstFollow - left recursive check", () => {
       new Definition(
         scanner,
         [
-          new Production("Program", mkIdentifier("Fred")),
-          new Production("Fred", mkIdentifier("Program")),
+          mkProduction("Program", mkIdentifier("Fred")),
+          mkProduction("Fred", mkIdentifier("Program")),
         ],
       ),
     ),
@@ -73,7 +73,7 @@ Deno.test("definition - calculateFirstFollow - sample grammar", () => {
     .addToken("h", new LADefinition.LiteralStringRegEx("h"));
 
   const definition = new Definition(scanner, [
-    new Production(
+    mkProduction(
       "S",
       mkSequence([
         mkIdentifier("a"),
@@ -82,11 +82,11 @@ Deno.test("definition - calculateFirstFollow - sample grammar", () => {
         mkIdentifier("h"),
       ]),
     ),
-    new Production(
+    mkProduction(
       "B",
       mkSequence([mkIdentifier("c"), mkIdentifier("C")]),
     ),
-    new Production(
+    mkProduction(
       "C",
       mkOptional(
         mkSequence([
@@ -95,12 +95,12 @@ Deno.test("definition - calculateFirstFollow - sample grammar", () => {
         ]),
       ),
     ),
-    new Production(
+    mkProduction(
       "D",
       mkSequence([mkIdentifier("E"), mkIdentifier("F")]),
     ),
-    new Production("E", mkOptional(mkIdentifier("g"))),
-    new Production("F", mkOptional(mkIdentifier("f"))),
+    mkProduction("E", mkOptional(mkIdentifier("g"))),
+    mkProduction("F", mkOptional(mkIdentifier("f"))),
   ]);
 
   Assert.assertEquals(

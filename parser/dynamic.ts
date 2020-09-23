@@ -12,6 +12,7 @@ import {
   mkIdentifier,
   mkMany,
   mkOptional,
+  mkProduction,
   mkSequence,
   Production,
 } from "../cfg/definition.ts";
@@ -101,7 +102,7 @@ class Translate {
     }
 
     this.productions.push(
-      new Production(production.name.id, this.translateExpr(production.expr)),
+      mkProduction(production.name.id, this.translateExpr(production.expr)),
     );
   }
 

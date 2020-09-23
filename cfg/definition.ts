@@ -24,15 +24,15 @@ export class Definition {
   }
 }
 
-export class Production {
+export type Production = {
   lhs: string;
   expr: Expr;
+};
 
-  constructor(lhs: string, expr: Expr) {
-    this.lhs = lhs;
-    this.expr = expr;
-  }
-}
+export const mkProduction = (lhs: string, expr: Expr): Production => ({
+  lhs,
+  expr,
+});
 
 export type Expr = Identifier | Sequence | Alternative | Many | Optional;
 
