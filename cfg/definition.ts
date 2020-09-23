@@ -34,53 +34,56 @@ export class Production {
   }
 }
 
-export interface Expr {
-}
+export type Expr = Identifier | Sequence | Alternative | Many | Optional;
 
-export class Identifier implements Expr {
+export type Identifier = {
+  tag: "Identifier";
   name: string;
+};
 
-  constructor(name: string) {
-    this.name = name;
-  }
-}
-
-export class Sequence implements Expr {
+export type Sequence = {
+  tag: "Sequence";
   exprs: Array<Expr>;
+};
 
-  constructor(exprs: Array<Expr>) {
-    this.exprs = exprs;
-  }
-}
-
-export class Alternative implements Expr {
+export type Alternative = {
+  tag: "Alternative";
   exprs: Array<Expr>;
+};
 
-  constructor(exprs: Array<Expr>) {
-    this.exprs = exprs;
-  }
-}
-
-export class Many implements Expr {
+export type Many = {
+  tag: "Many";
   expr: Expr;
+};
 
-  constructor(expr: Expr) {
-    this.expr = expr;
-  }
-}
-
-export class Optional implements Expr {
+export type Optional = {
+  tag: "Optional";
   expr: Expr;
+};
 
-  constructor(expr: Expr) {
-    this.expr = expr;
-  }
-}
+export const mkIdentifier = (name: string): Identifier => ({
+  tag: "Identifier",
+  name,
+});
+
+export const mkSequence = (exprs: Array<Expr>): Sequence => ({
+  tag: "Sequence",
+  exprs,
+});
+
+export const mkAlternative = (exprs: Array<Expr>): Alternative => ({
+  tag: "Alternative",
+  exprs,
+});
+
+export const mkMany = (expr: Expr): Many => ({ tag: "Many", expr });
+
+export const mkOptional = (expr: Expr): Optional => ({ tag: "Optional", expr });
 
 const leftRecursionDependencies = (e: Expr): Set<string> => {
-  if (e instanceof Identifier) {
+  if (e.tag === "Identifier") {
     return Set.setOf(e.name);
-  } else if (e instanceof Sequence) {
+  } else if (e.tag === "Sequence") {
     let result = Set.emptySet as Set<string>;
 
     for (const es of e.exprs) {
@@ -90,21 +93,21 @@ const leftRecursionDependencies = (e: Expr): Set<string> => {
       }
     }
     return result;
-  } else if (e instanceof Alternative) {
+  } else if (e.tag === "Alternative") {
     return Array.union(e.exprs.map(leftRecursionDependencies));
-  } else if (e instanceof Many) {
+  } else if (e.tag === "Many") {
     return leftRecursionDependencies(e.expr);
   } else {
-    return leftRecursionDependencies((e as Optional).expr);
+    return leftRecursionDependencies(e.expr);
   }
 };
 
 const isEpsilonable = (e: Expr): boolean => {
-  if (e instanceof Identifier) {
+  if (e.tag === "Identifier") {
     return false;
-  } else if (e instanceof Sequence) {
+  } else if (e.tag === "Sequence") {
     return Array.and(e.exprs.map(isEpsilonable));
-  } else if (e instanceof Alternative) {
+  } else if (e.tag === "Alternative") {
     return Array.or(e.exprs.map(isEpsilonable));
   } else {
     return true;
@@ -208,17 +211,17 @@ class FirstFollowCalculation {
     const emptyNonTerminals: Map<string, boolean> = new Map();
 
     const isExprNullable = (e: Expr): boolean | undefined => {
-      if (e instanceof Identifier) {
+      if (e.tag === "Identifier") {
         return (this.terminalNames.has(e.name))
           ? false
           : emptyNonTerminals.get(e.name);
-      } else if (e instanceof Sequence) {
+      } else if (e.tag === "Sequence") {
         const isSequenceNullable = e.exprs.map((es) => isExprNullable(es));
 
         return (isSequenceNullable.some((x) => x === undefined))
           ? undefined
           : isSequenceNullable.every((x) => x === true);
-      } else if (e instanceof Alternative) {
+      } else if (e.tag === "Alternative") {
         const isAlternativesNullable = e.exprs.map((es) => isExprNullable(es));
 
         return (isAlternativesNullable.some((x) => x === true))
@@ -253,11 +256,11 @@ class FirstFollowCalculation {
   }
 
   private isExprNullable(e: Expr): boolean {
-    if (e instanceof Identifier) {
+    if (e.tag === "Identifier") {
       return this.emptyNonTerminals.has(e.name);
-    } else if (e instanceof Sequence) {
+    } else if (e.tag === "Sequence") {
       return Array.and(e.exprs.map((es) => this.isExprNullable(es)));
-    } else if (e instanceof Alternative) {
+    } else if (e.tag === "Alternative") {
       return e.exprs.map((es) => this.isExprNullable(es)).some((x) => x);
     } else {
       return true;
@@ -265,9 +268,9 @@ class FirstFollowCalculation {
   }
 
   private calculateInitialFirst(e: Expr): Set<string> {
-    if (e instanceof Identifier) {
+    if (e.tag === "Identifier") {
       return Set.setOf(e.name);
-    } else if (e instanceof Sequence) {
+    } else if (e.tag === "Sequence") {
       let result = Set.emptySet as Set<string>;
       for (const es of e.exprs) {
         result = Set.union(this.calculateInitialFirst(es), result);
@@ -276,9 +279,9 @@ class FirstFollowCalculation {
         }
       }
       return result;
-    } else if (e instanceof Alternative) {
+    } else if (e.tag === "Alternative") {
       return Array.union(e.exprs.map((es) => this.calculateInitialFirst(es)));
-    } else if (e instanceof Many) {
+    } else if (e.tag === "Many") {
       return this.calculateInitialFirst(e.expr);
     } else {
       return this.calculateInitialFirst((e as Optional).expr);
@@ -332,7 +335,7 @@ class FirstFollowCalculation {
     e: Expr,
     nextFirst: Set<string>,
   ) {
-    if (e instanceof Identifier) {
+    if (e.tag === "Identifier") {
       if (this.nonTerminalNames.has(e.name)) {
         const follow = (nextFirst.has(""))
           ? Set.minus(nextFirst, epsilonSet)
@@ -344,12 +347,12 @@ class FirstFollowCalculation {
 
         follows.set(e.name, nextFollows);
       }
-    } else if (e instanceof Sequence) {
+    } else if (e.tag === "Sequence") {
       let exprs = e.exprs;
 
       while (exprs.length > 0) {
         const [hdExpr, ...tlExprs] = exprs;
-        const tlFirst = first(firsts, new Sequence(tlExprs));
+        const tlFirst = first(firsts, { tag: "Sequence", exprs: tlExprs });
 
         if (tlFirst.has("")) {
           this.calculateInitialFollow(
@@ -364,11 +367,11 @@ class FirstFollowCalculation {
 
         exprs = tlExprs;
       }
-    } else if (e instanceof Alternative) {
+    } else if (e.tag === "Alternative") {
       e.exprs.forEach((es) =>
         this.calculateInitialFollow(firsts, follows, es, nextFirst)
       );
-    } else if (e instanceof Many) {
+    } else if (e.tag === "Many") {
       this.calculateInitialFollow(firsts, follows, e.expr, nextFirst);
     } else {
       this.calculateInitialFollow(
@@ -431,10 +434,10 @@ class FirstFollowCalculation {
 }
 
 export function first(firsts: Map<string, Set<string>>, e: Expr): Set<string> {
-  if (e instanceof Identifier) {
+  if (e.tag === "Identifier") {
     const f = firsts.get(e.name);
     return (f === undefined) ? Set.setOf(e.name) : f;
-  } else if (e instanceof Sequence) {
+  } else if (e.tag === "Sequence") {
     let result = Set.emptySet as Set<string>;
     for (const es of e.exprs) {
       const esFirst = first(firsts, es);
@@ -446,9 +449,9 @@ export function first(firsts: Map<string, Set<string>>, e: Expr): Set<string> {
       }
     }
     return Set.union(result, epsilonSet);
-  } else if (e instanceof Alternative) {
+  } else if (e.tag === "Alternative") {
     return Array.union(e.exprs.map((es) => first(firsts, es)));
-  } else if (e instanceof Many) {
+  } else if (e.tag === "Many") {
     return Set.union(first(firsts, e.expr), epsilonSet);
   } else {
     return Set.union(first(firsts, ((e as Optional).expr)), epsilonSet);

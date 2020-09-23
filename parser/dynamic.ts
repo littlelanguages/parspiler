@@ -6,14 +6,14 @@ import * as Parser from "./parser.ts";
 import * as AST from "./ast.ts";
 import * as Errors from "./errors.ts";
 import {
-  Alternative,
   Definition,
   Expr,
-  Identifier,
-  Many,
-  Optional,
+  mkAlternative,
+  mkIdentifier,
+  mkMany,
+  mkOptional,
+  mkSequence,
   Production,
-  Sequence,
 } from "../cfg/definition.ts";
 import { Dynamic, Definition as ScanpilerDefinition } from "../scanpiler.ts";
 
@@ -115,9 +115,9 @@ class Translate {
         });
       }
 
-      return new Identifier(expr.id);
+      return mkIdentifier(expr.id);
     } else if (expr.tag == "LiteralString") {
-      return new Identifier(
+      return mkIdentifier(
         addLiteralToken(
           this.scannerDefinition,
           dropRight(1, dropLeft(1, expr.value)),
@@ -126,13 +126,13 @@ class Translate {
     } else if (expr.tag == "ParenExpr") {
       return this.translateExpr(expr.expr);
     } else if (expr.tag == "SequenceExpr") {
-      return new Sequence(expr.exprs.map((e) => this.translateExpr(e)));
+      return mkSequence(expr.exprs.map((e) => this.translateExpr(e)));
     } else if (expr.tag == "AlternativeExpr") {
-      return new Alternative(expr.exprs.map((e) => this.translateExpr(e)));
+      return mkAlternative(expr.exprs.map((e) => this.translateExpr(e)));
     } else if (expr.tag == "ManyExpr") {
-      return new Many(this.translateExpr(expr.expr));
+      return mkMany(this.translateExpr(expr.expr));
     } else if (expr.tag == "OptionalExpr") {
-      return new Optional(this.translateExpr(expr.expr));
+      return mkOptional(this.translateExpr(expr.expr));
     } else {
       throw new Error(`TBD: translateExpr: ${expr}`);
     }

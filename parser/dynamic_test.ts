@@ -5,13 +5,13 @@ import * as Errors from "./errors.ts";
 import { calculateTokenName, translate } from "./dynamic.ts";
 import { range } from "./location.ts";
 import {
-  Alternative,
   Definition,
-  Identifier,
-  Many,
-  Optional,
+  mkAlternative,
+  mkIdentifier,
+  mkMany,
+  mkOptional,
+  mkSequence,
   Production,
-  Sequence,
 } from "../cfg/definition.ts";
 import { Dynamic, Definition as LADefinition } from "../scanpiler.ts";
 
@@ -60,7 +60,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
       [
         new Production(
           "Program",
-          new Identifier("Identifier"),
+          mkIdentifier("Identifier"),
         ),
       ],
     ),
@@ -73,8 +73,8 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
       [
         new Production(
           "Program",
-          new Sequence(
-            [new Identifier("Identifier"), new Identifier("Identifier")],
+          mkSequence(
+            [mkIdentifier("Identifier"), mkIdentifier("Identifier")],
           ),
         ),
       ],
@@ -88,7 +88,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
       [
         new Production(
           "Program",
-          new Many(new Identifier("Identifier")),
+          mkMany(mkIdentifier("Identifier")),
         ),
       ],
     ),
@@ -101,7 +101,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
       [
         new Production(
           "Program",
-          new Optional(new Identifier("Identifier")),
+          mkOptional(mkIdentifier("Identifier")),
         ),
       ],
     ),
@@ -114,7 +114,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
       [
         new Production(
           "Program",
-          new Identifier("Identifier"),
+          mkIdentifier("Identifier"),
         ),
       ],
     ),
@@ -127,8 +127,8 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
       [
         new Production(
           "Program",
-          new Alternative(
-            [new Identifier("Identifier"), new Identifier("Identifier")],
+          mkAlternative(
+            [mkIdentifier("Identifier"), mkIdentifier("Identifier")],
           ),
         ),
       ],
@@ -155,14 +155,14 @@ Deno.test("dynamic - reference to non-terminal symbol", async () => {
       [
         new Production(
           "Program",
-          new Identifier("Names"),
+          mkIdentifier("Names"),
         ),
         new Production(
           "Names",
-          new Sequence(
+          mkSequence(
             [
-              new Identifier("Identifier"),
-              new Many(new Identifier("Identifier")),
+              mkIdentifier("Identifier"),
+              mkMany(mkIdentifier("Identifier")),
             ],
           ),
         ),
@@ -212,9 +212,9 @@ Deno.test("dynamic - move literal strings into terminals", async () => {
       [
         new Production(
           "Program",
-          new Sequence([
-            new Identifier("Hello"),
-            new Identifier("Period"),
+          mkSequence([
+            mkIdentifier("Hello"),
+            mkIdentifier("Period"),
           ]),
         ),
       ],
@@ -232,9 +232,9 @@ Deno.test("dynamic - match literal strings with terminals", async () => {
       [
         new Production(
           "Program",
-          new Sequence([
-            new Identifier("Uses"),
-            new Identifier("Semicolon"),
+          mkSequence([
+            mkIdentifier("Uses"),
+            mkIdentifier("Semicolon"),
           ]),
         ),
       ],
@@ -254,10 +254,10 @@ Deno.test("dynamic - create and match literal strings with terminals", async () 
       [
         new Production(
           "Program",
-          new Sequence([
-            new Identifier("From"),
-            new Identifier("Semicolon"),
-            new Identifier("From"),
+          mkSequence([
+            mkIdentifier("From"),
+            mkIdentifier("Semicolon"),
+            mkIdentifier("From"),
           ]),
         ),
       ],

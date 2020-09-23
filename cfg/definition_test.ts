@@ -4,10 +4,10 @@ import * as Set from "../data/set.ts";
 import {
   calculateFirstFollow,
   Definition,
-  Identifier,
-  Optional,
+  mkIdentifier,
+  mkOptional,
+  mkSequence,
   Production,
-  Sequence,
 } from "./definition.ts";
 import { Dynamic, Definition as LADefinition } from "../scanpiler.ts";
 
@@ -24,7 +24,7 @@ Deno.test("definition - calculateFirstFollow - left recursive check", () => {
     calculateFirstFollow(
       new Definition(
         scanner,
-        [new Production("Program", new Identifier("Program"))],
+        [new Production("Program", { tag: "Identifier", name: "Program" })],
       ),
     ),
     [{
@@ -38,8 +38,8 @@ Deno.test("definition - calculateFirstFollow - left recursive check", () => {
       new Definition(
         scanner,
         [
-          new Production("Program", new Identifier("Fred")),
-          new Production("Fred", new Identifier("Program")),
+          new Production("Program", mkIdentifier("Fred")),
+          new Production("Fred", mkIdentifier("Program")),
         ],
       ),
     ),
@@ -75,32 +75,32 @@ Deno.test("definition - calculateFirstFollow - sample grammar", () => {
   const definition = new Definition(scanner, [
     new Production(
       "S",
-      new Sequence([
-        new Identifier("a"),
-        new Identifier("B"),
-        new Identifier("D"),
-        new Identifier("h"),
+      mkSequence([
+        mkIdentifier("a"),
+        mkIdentifier("B"),
+        mkIdentifier("D"),
+        mkIdentifier("h"),
       ]),
     ),
     new Production(
       "B",
-      new Sequence([new Identifier("c"), new Identifier("C")]),
+      mkSequence([mkIdentifier("c"), mkIdentifier("C")]),
     ),
     new Production(
       "C",
-      new Optional(
-        new Sequence([
-          new Identifier("b"),
-          new Identifier("C"),
+      mkOptional(
+        mkSequence([
+          mkIdentifier("b"),
+          mkIdentifier("C"),
         ]),
       ),
     ),
     new Production(
       "D",
-      new Sequence([new Identifier("E"), new Identifier("F")]),
+      mkSequence([mkIdentifier("E"), mkIdentifier("F")]),
     ),
-    new Production("E", new Optional(new Identifier("g"))),
-    new Production("F", new Optional(new Identifier("f"))),
+    new Production("E", mkOptional(mkIdentifier("g"))),
+    new Production("F", mkOptional(mkIdentifier("f"))),
   ]);
 
   Assert.assertEquals(
