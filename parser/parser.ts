@@ -9,18 +9,23 @@ export interface Visitor<
   T_SequenceExpr,
   T_Factor,
 > {
-  visitDefinition(a: [Token, Token, Token, Array<T_Production>]): T_Definition;
+  visitDefinition(
+    a1: Token,
+    a2: Token,
+    a3: Token,
+    a4: Array<T_Production>,
+  ): T_Definition;
 
-  visitProduction(a: [Token, Token, T_Expr, Token]): T_Production;
+  visitProduction(a1: Token, a2: Token, a3: T_Expr, a4: Token): T_Production;
 
-  visitExpr(a: [T_SequenceExpr, Array<[Token, T_SequenceExpr]>]): T_Expr;
+  visitExpr(a1: T_SequenceExpr, a2: Array<[Token, T_SequenceExpr]>): T_Expr;
 
   visitSequenceExpr(a: Array<T_Factor>): T_SequenceExpr;
 
   visitFactor1(a: Token): T_Factor;
-  visitFactor2(a: [Token, T_Expr, Token]): T_Factor;
-  visitFactor3(a: [Token, T_Expr, Token]): T_Factor;
-  visitFactor4(a: [Token, T_Expr, Token]): T_Factor;
+  visitFactor2(a1: Token, a2: T_Expr, a3: Token): T_Factor;
+  visitFactor3(a1: Token, a2: T_Expr, a3: Token): T_Factor;
+  visitFactor4(a1: Token, a2: T_Expr, a3: Token): T_Factor;
   visitFactor5(a: Token): T_Factor;
 }
 
@@ -104,7 +109,7 @@ class Parser<
 
     this.matchToken(TToken.EOS);
 
-    return this.visitor.visitDefinition([a1, a2, a3, a4]);
+    return this.visitor.visitDefinition(a1, a2, a3, a4);
   }
 
   production(): T_Production {
@@ -113,7 +118,7 @@ class Parser<
     const a3 = this.expr();
     const a4 = this.matchToken(TToken.Semicolon);
 
-    return this.visitor.visitProduction([a1, a2, a3, a4]);
+    return this.visitor.visitProduction(a1, a2, a3, a4);
   }
 
   expr(): T_Expr {
@@ -126,7 +131,7 @@ class Parser<
       a2.push([a21, a22]);
     }
 
-    return this.visitor.visitExpr([a1, a2]);
+    return this.visitor.visitExpr(a1, a2);
   }
 
   sequenceExpr(): T_SequenceExpr {
@@ -149,19 +154,19 @@ class Parser<
       const a2 = this.expr();
       const a3 = this.matchToken(TToken.RParen);
 
-      return this.visitor.visitFactor2([a1, a2, a3]);
+      return this.visitor.visitFactor2(a1, a2, a3);
     } else if (this.isToken(TToken.LCurly)) {
       const a1 = this.nextToken();
       const a2 = this.expr();
       const a3 = this.matchToken(TToken.RCurly);
 
-      return this.visitor.visitFactor3([a1, a2, a3]);
+      return this.visitor.visitFactor3(a1, a2, a3);
     } else if (this.isToken(TToken.LBracket)) {
       const a1 = this.nextToken();
       const a2 = this.expr();
       const a3 = this.matchToken(TToken.RBracket);
 
-      return this.visitor.visitFactor4([a1, a2, a3]);
+      return this.visitor.visitFactor4(a1, a2, a3);
     } else if (this.isToken(TToken.Identifier)) {
       const a1 = this.nextToken();
 

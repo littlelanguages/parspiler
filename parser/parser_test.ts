@@ -182,11 +182,11 @@ Deno.test("parser - definition - simple", () => {
 });
 
 function parseExpr(text: string) {
-  return Parser.parseExpr(text, new AST.Visitor());
+  return Parser.parseExpr(text, AST.visitor);
 }
 
 function parseDefinition(text: string): Either<Errors, AST.Definition> {
-  return Parser.parseDefinition(text, new AST.Visitor());
+  return Parser.parseDefinition(text, AST.visitor);
 }
 
 function mkID(point: [number, number, number], id: string) {

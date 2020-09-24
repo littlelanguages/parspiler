@@ -23,7 +23,7 @@ export function translate(
   input: string,
 ): Promise<Either<Errors.Errors, Definition>> {
   return Parser
-    .parseDefinition(input, new AST.Visitor())
+    .parseDefinition(input, AST.visitor)
     .either(
       (l) => Promise.resolve(left(l)),
       async (ast) => {

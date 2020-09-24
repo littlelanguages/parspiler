@@ -1,7 +1,7 @@
 import * as Parser from "./parser.ts";
 
 import { Location, combine } from "./location.ts";
-import { Token, TToken } from "./scanner.ts";
+import { Token } from "./scanner.ts";
 
 export type Definition = {
   tag: "Definition";
@@ -64,71 +64,56 @@ export type IdentifierReference = {
   id: string;
 };
 
-export class Visitor
-  implements Parser.Visitor<Definition, Production, Expr, Expr, Expr> {
-  visitDefinition(
-    a: [Token, Token, Token, Array<Production>],
-  ): Definition {
-    return {
+export const visitor: Parser.Visitor<Definition, Production, Expr, Expr, Expr> =
+  {
+    visitDefinition: (
+      _1: Token,
+      a2: Token,
+      _2: Token,
+      a4: Array<Production>,
+    ) => ({
       tag: "Definition",
-      uses: { tag: "LiteralString", location: a[1][1], value: a[1][2] },
-      productions: a[3],
-    };
-  }
+      uses: { tag: "LiteralString", location: a2[1], value: a2[2] },
+      productions: a4,
+    }),
 
-  visitProduction(
-    a: [Token, Token, Expr, Token],
-  ): Production {
-    return {
+    visitProduction: (a1: Token, _1: Token, a3: Expr, _2: Token) => ({
       tag: "Production",
-      name: { tag: "ID", location: a[0][1], id: a[0][2] },
-      expr: a[2],
-    };
-  }
+      name: { tag: "ID", location: a1[1], id: a1[2] },
+      expr: a3,
+    }),
 
-  visitExpr(a: [Expr, [Token, Expr][]]): Expr {
-    if (a[1].length == 0) {
-      return a[0];
-    } else {
-      const rest = a[1].map((c) => c[1]);
+    visitExpr: (a1: Expr, a2: Array<[Token, Expr]>) =>
+      (a2.length == 0)
+        ? a1
+        : { tag: "AlternativeExpr", exprs: [a1, ...a2.map((c) => c[1])] },
 
-      return { tag: "AlternativeExpr", exprs: [a[0], ...rest] };
-    }
-  }
+    visitSequenceExpr: (a: Array<Expr>) =>
+      (a.length == 1) ? a[0] : { tag: "SequenceExpr", exprs: a },
 
-  visitSequenceExpr(a: Expr[]): Expr {
-    return (a.length == 1) ? a[0] : { tag: "SequenceExpr", exprs: a };
-  }
+    visitFactor1: (a: Token) => ({
+      tag: "LiteralString",
+      location: a[1],
+      value: a[2],
+    }),
 
-  visitFactor1(a: Token): Expr {
-    return { tag: "LiteralString", location: a[1], value: a[2] };
-  }
-
-  visitFactor2(a: [Token, Expr, Token]): Expr {
-    return {
+    visitFactor2: (a1: Token, a2: Expr, a3: Token) => ({
       tag: "ParenExpr",
-      location: combine(a[0][1], a[2][1]),
-      expr: a[1],
-    };
-  }
+      location: combine(a1[1], a3[1]),
+      expr: a2,
+    }),
 
-  visitFactor3(a: [Token, Expr, Token]): Expr {
-    return {
+    visitFactor3: (a1: Token, a2: Expr, a3: Token) => ({
       tag: "ManyExpr",
-      location: combine(a[0][1], a[2][1]),
-      expr: a[1],
-    };
-  }
+      location: combine(a1[1], a3[1]),
+      expr: a2,
+    }),
 
-  visitFactor4(a: [Token, Expr, Token]): Expr {
-    return {
+    visitFactor4: (a1: Token, a2: Expr, a3: Token) => ({
       tag: "OptionalExpr",
-      location: combine(a[0][1], a[2][1]),
-      expr: a[1],
-    };
-  }
+      location: combine(a1[1], a3[1]),
+      expr: a2,
+    }),
 
-  visitFactor5(a: Token): Expr {
-    return { tag: "ID", location: a[1], id: a[2] };
-  }
-}
+    visitFactor5: (a: Token) => ({ tag: "ID", location: a[1], id: a[2] }),
+  };
