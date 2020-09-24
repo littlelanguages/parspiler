@@ -28,23 +28,6 @@ export interface Visitor<
   visitFactor5(a: Token): T_Factor;
 }
 
-export const parseExpr = <
-  T_Definition,
-  T_Production,
-  T_Expr,
-  T_SequenceExpr,
-  T_Factor,
->(
-  input: string,
-  visitor: Visitor<
-    T_Definition,
-    T_Production,
-    T_Expr,
-    T_SequenceExpr,
-    T_Factor
-  >,
-): T_Expr => mkParser(mkScanner(input), visitor).expr();
-
 export const parseDefinition = <
   T_Definition,
   T_Production,
@@ -68,7 +51,7 @@ export const parseDefinition = <
   }
 };
 
-const mkParser = <
+export const mkParser = <
   T_Definition,
   T_Production,
   T_Expr,

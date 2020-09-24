@@ -3,7 +3,8 @@ import * as Assert from "../testing/asserts.ts";
 import * as AST from "./ast.ts";
 import { Either, right } from "../data/either.ts";
 import { mkCoordinate, range } from "./location.ts";
-import * as Parser from "./parser.ts";
+import { SyntaxError, mkParser, parseDefinition } from "./parser.ts";
+import { mkScanner } from "./scanner.ts";
 
 Deno.test('parser - expr - "while"', () => {
   Assert.assertEquals(
@@ -113,7 +114,7 @@ Deno.test("parser - expr - a b | c d | e f", () => {
 
 Deno.test("parser - definition - minimal", () => {
   Assert.assertEquals(
-    parseDefinition('uses "some.ll";'),
+    parse('uses "some.ll";'),
     right({
       tag: "Definition",
       uses: mkLiteralString([5, 1, 6], '"some.ll"'),
@@ -124,7 +125,7 @@ Deno.test("parser - definition - minimal", () => {
 
 Deno.test("parser - definition - simple", () => {
   Assert.assertEquals(
-    parseDefinition(
+    parse(
       'uses "some.ll";\n' +
         'Definition: \"uses\" LiteralString \";\" {Production};\n' +
         'Production: Identifier ":" Expr ";";\n' +
@@ -180,45 +181,35 @@ Deno.test("parser - definition - simple", () => {
   );
 });
 
-function parseExpr(text: string) {
-  return Parser.parseExpr(text, AST.visitor);
-}
+const parseExpr = (text: string) =>
+  mkParser(mkScanner(text), AST.visitor).expr();
 
-function parseDefinition(
-  text: string,
-): Either<Parser.SyntaxError, AST.Definition> {
-  return Parser.parseDefinition(text, AST.visitor);
-}
+const parse = (text: string) => parseDefinition(text, AST.visitor);
 
-function mkID(point: [number, number, number], id: string) {
-  return {
-    tag: "ID",
-    location: id.length == 1
-      ? mkCoordinate(point[0], point[1], point[2])
-      : range(
-        point[0],
-        point[1],
-        point[2],
-        point[0] + id.length - 1,
-        point[1],
-        point[2] + id.length - 1,
-      ),
-    id,
-  };
-}
-function mkLiteralString(point: [number, number, number], value: string) {
-  return {
-    tag: "LiteralString",
-    location: value.length == 1
-      ? mkCoordinate(point[0], point[1], point[2])
-      : range(
-        point[0],
-        point[1],
-        point[2],
-        point[0] + value.length - 1,
-        point[1],
-        point[2] + value.length - 1,
-      ),
-    value,
-  };
-}
+const mkID = (point: [number, number, number], id: string) => ({
+  tag: "ID",
+  location: id.length == 1 ? mkCoordinate(point[0], point[1], point[2]) : range(
+    point[0],
+    point[1],
+    point[2],
+    point[0] + id.length - 1,
+    point[1],
+    point[2] + id.length - 1,
+  ),
+  id,
+});
+
+const mkLiteralString = (point: [number, number, number], value: string) => ({
+  tag: "LiteralString",
+  location: value.length == 1
+    ? mkCoordinate(point[0], point[1], point[2])
+    : range(
+      point[0],
+      point[1],
+      point[2],
+      point[0] + value.length - 1,
+      point[1],
+      point[2] + value.length - 1,
+    ),
+  value,
+});
