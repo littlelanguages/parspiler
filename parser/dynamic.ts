@@ -108,35 +108,36 @@ class Translate {
   }
 
   private translateExpr(expr: AST.Expr): Expr {
-    if (expr.tag == "ID") {
-      if (!this.nonTerminals.has(expr.id) && !this.terminals.has(expr.id)) {
-        this.errors.push({
-          tag: "UnknownSymbolError",
-          location: expr.location,
-          name: expr.id,
-        });
-      }
+    switch (expr.tag) {
+      case "ID":
+        if (!this.nonTerminals.has(expr.id) && !this.terminals.has(expr.id)) {
+          this.errors.push({
+            tag: "UnknownSymbolError",
+            location: expr.location,
+            name: expr.id,
+          });
+        }
 
-      return mkIdentifier(expr.id);
-    } else if (expr.tag == "LiteralString") {
-      return mkIdentifier(
-        addLiteralToken(
-          this.scannerDefinition,
-          dropRight(1, dropLeft(1, expr.value)),
-        ),
-      );
-    } else if (expr.tag == "ParenExpr") {
-      return this.translateExpr(expr.expr);
-    } else if (expr.tag == "SequenceExpr") {
-      return mkSequence(expr.exprs.map((e) => this.translateExpr(e)));
-    } else if (expr.tag == "AlternativeExpr") {
-      return mkAlternative(expr.exprs.map((e) => this.translateExpr(e)));
-    } else if (expr.tag == "ManyExpr") {
-      return mkMany(this.translateExpr(expr.expr));
-    } else if (expr.tag == "OptionalExpr") {
-      return mkOptional(this.translateExpr(expr.expr));
-    } else {
-      throw new Error(`TBD: translateExpr: ${expr}`);
+        return mkIdentifier(expr.id);
+      case "LiteralString":
+        return mkIdentifier(
+          addLiteralToken(
+            this.scannerDefinition,
+            dropRight(1, dropLeft(1, expr.value)),
+          ),
+        );
+      case "ParenExpr":
+        return this.translateExpr(expr.expr);
+      case "SequenceExpr":
+        return mkSequence(expr.exprs.map((e) => this.translateExpr(e)));
+      case "AlternativeExpr":
+        return mkAlternative(expr.exprs.map((e) => this.translateExpr(e)));
+      case "ManyExpr":
+        return mkMany(this.translateExpr(expr.expr));
+      case "OptionalExpr":
+        return mkOptional(this.translateExpr(expr.expr));
+      default:
+        throw new Error(`TBD: translateExpr: ${expr}`);
     }
   }
 }
