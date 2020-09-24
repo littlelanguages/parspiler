@@ -3,26 +3,22 @@ import * as Set from "../data/set.ts";
 
 import { Scanner } from "../scanpiler.ts";
 
-export class Definition {
+export type Definition = {
   scanner: Scanner.Definition;
   productions: Array<Production>;
+  terminalNames: Set<string>;
+  nonTerminalNames: Set<string>;
+};
 
-  constructor(
-    scanner: Scanner.Definition,
-    productions: Array<Production> = [],
-  ) {
-    this.scanner = scanner;
-    this.productions = productions;
-  }
-
-  terminalNames(): Set<string> {
-    return Set.setOf(this.scanner.tokens.map((t) => t[0]));
-  }
-
-  nonTerminalNames(): Set<string> {
-    return Set.setOf(this.productions.map((p) => p.lhs));
-  }
-}
+export const mkDefinition = (
+  scanner: Scanner.Definition,
+  productions: Array<Production>,
+): Definition => ({
+  scanner,
+  productions,
+  terminalNames: Set.setOf(scanner.tokens.map((t) => t[0])),
+  nonTerminalNames: Set.setOf(productions.map((p) => p.lhs)),
+});
 
 export type Production = {
   lhs: string;
@@ -106,7 +102,7 @@ export function calculateFirstFollow(
 const validateNotLeftRecursive = (
   definition: Definition,
 ): FirstFollowErrors => {
-  const nonTerminalNames = definition.nonTerminalNames();
+  const nonTerminalNames = definition.nonTerminalNames;
 
   const leftRecursionDependencies = (e: Expr): Set<string> => {
     const isEpsilonable = (e: Expr): boolean => {
@@ -184,70 +180,69 @@ const validateNotLeftRecursive = (
     .map((dep) => ({ tag: "LeftRecursiveGrammarError", name: dep[0] }));
 };
 
-const calculateEmptyNonTerminals = (
+const calculateEmptyNonTerminalNames = (
   definition: Definition,
-): Map<string, boolean> => {
-  const terminalNames = definition.terminalNames();
+): Set<string> => {
+  const calculateEmptyNonTerminals = (): Map<string, boolean> => {
+    const emptyNonTerminals: Map<string, boolean> = new Map();
 
-  const emptyNonTerminals: Map<string, boolean> = new Map();
+    const isExprNullable = (e: Expr): boolean | undefined => {
+      switch (e.tag) {
+        case "Identifier":
+          return (definition.terminalNames.has(e.name))
+            ? false
+            : emptyNonTerminals.get(e.name);
+        case "Sequence":
+          const isSequenceNullable = e.exprs.map((es) => isExprNullable(es));
 
-  const isExprNullable = (e: Expr): boolean | undefined => {
-    switch (e.tag) {
-      case "Identifier":
-        return (terminalNames.has(e.name))
-          ? false
-          : emptyNonTerminals.get(e.name);
-      case "Sequence":
-        const isSequenceNullable = e.exprs.map((es) => isExprNullable(es));
+          return (isSequenceNullable.some((x) => x === undefined))
+            ? undefined
+            : isSequenceNullable.every((x) => x === true);
+        case "Alternative":
+          const isAlternativesNullable = e.exprs.map((es) =>
+            isExprNullable(es)
+          );
 
-        return (isSequenceNullable.some((x) => x === undefined))
-          ? undefined
-          : isSequenceNullable.every((x) => x === true);
-      case "Alternative":
-        const isAlternativesNullable = e.exprs.map((es) => isExprNullable(es));
+          return (isAlternativesNullable.some((x) => x === true))
+            ? true
+            : (isAlternativesNullable.some((x) => x === undefined))
+            ? undefined
+            : false;
+        default:
+          return true;
+      }
+    };
 
-        return (isAlternativesNullable.some((x) => x === true))
-          ? true
-          : (isAlternativesNullable.some((x) => x === undefined))
-          ? undefined
-          : false;
-      default:
-        return true;
-    }
-  };
+    while (true) {
+      const sizeOfEmptyNonTerminals = emptyNonTerminals.size;
 
-  while (true) {
-    const sizeOfEmptyNonTerminals = emptyNonTerminals.size;
+      for (const p of definition.productions) {
+        if (!emptyNonTerminals.has(p.lhs)) {
+          const v = isExprNullable(p.expr);
 
-    for (const p of definition.productions) {
-      if (!emptyNonTerminals.has(p.lhs)) {
-        const v = isExprNullable(p.expr);
-
-        if (v !== undefined) {
-          emptyNonTerminals.set(p.lhs, v);
+          if (v !== undefined) {
+            emptyNonTerminals.set(p.lhs, v);
+          }
         }
+      }
+
+      if (sizeOfEmptyNonTerminals === emptyNonTerminals.size) {
+        break;
       }
     }
 
-    if (sizeOfEmptyNonTerminals === emptyNonTerminals.size) {
-      break;
-    }
-  }
+    return emptyNonTerminals;
+  };
 
-  return emptyNonTerminals;
-};
-
-const calculateEmptyNonTerminalNames = (definition: Definition): Set<string> =>
-  Set.setOf(
-    [...calculateEmptyNonTerminals(definition)].filter((x) => x[1]).map((x) =>
-      x[0]
-    ),
+  return Set.setOf(
+    [...calculateEmptyNonTerminals()].filter((x) => x[1]).map((x) => x[0]),
   );
+};
 
 const calculateFirst = (definition: Definition): Map<string, Set<string>> => {
   const emptyNonTerminalNames = calculateEmptyNonTerminalNames(definition);
-  const terminalNames = definition.terminalNames();
-  const nonTerminalNames = definition.nonTerminalNames();
+  const terminalNames = definition.terminalNames;
+  const nonTerminalNames = definition.nonTerminalNames;
 
   const isExprNullable = (e: Expr): boolean => {
     switch (e.tag) {
@@ -328,9 +323,6 @@ const calculateFollow = (
   definition: Definition,
   firsts: Map<string, Set<string>>,
 ): Map<string, Set<string>> => {
-  const terminalNames = definition.terminalNames();
-  const nonTerminalNames = definition.nonTerminalNames();
-
   const calculateInitialFollow = (
     firsts: Map<string, Set<string>>,
     follows: Map<string, Set<string>>,
@@ -339,7 +331,7 @@ const calculateFollow = (
   ) => {
     switch (e.tag) {
       case "Identifier":
-        if (nonTerminalNames.has(e.name)) {
+        if (definition.nonTerminalNames.has(e.name)) {
           const follow = (nextFirst.has(""))
             ? Set.minus(nextFirst, epsilonSet)
             : nextFirst;
@@ -385,7 +377,7 @@ const calculateFollow = (
     }
   };
 
-  let follows: Map<string, Set<string>> = new Map(
+  const follows: Map<string, Set<string>> = new Map(
     [[definition.productions[0].lhs, Set.setOf("$")]],
   );
 
@@ -402,11 +394,14 @@ const calculateFollow = (
     let changed = false;
     for (const p of follows) {
       const nonTerminals = Set.filter(
-        (e) => nonTerminalNames.has(e),
+        (e) => definition.nonTerminalNames.has(e),
         p[1],
       );
       if (!Set.isEmpty(nonTerminals)) {
-        const terminals = Set.filter((e) => terminalNames.has(e), p[1]);
+        const terminals = Set.filter(
+          (e) => definition.terminalNames.has(e),
+          p[1],
+        );
 
         const newFollows = Set.minus(
           Set.union(

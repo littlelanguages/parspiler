@@ -9,6 +9,7 @@ import {
   Definition,
   Expr,
   mkAlternative,
+  mkDefinition,
   mkIdentifier,
   mkMany,
   mkOptional,
@@ -77,7 +78,7 @@ class Translate {
     this.translateProductions();
 
     return (this.errors.length == 0)
-      ? right(new Definition(this.scannerDefinition, this.productions))
+      ? right(mkDefinition(this.scannerDefinition, this.productions))
       : left(this.errors);
   }
 

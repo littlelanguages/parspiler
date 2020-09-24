@@ -7,6 +7,7 @@ import { range } from "./location.ts";
 import {
   Definition,
   mkAlternative,
+  mkDefinition,
   mkIdentifier,
   mkMany,
   mkOptional,
@@ -34,7 +35,10 @@ Deno.test("dynamic - scanner file does not exist", async () => {
 Deno.test("dynamic - scanner file exists", async () => {
   const translation = await translate('uses "./test/simple.ll";');
 
-  Assert.assertEquals(translation, right(new Definition(scannerDefinition())));
+  Assert.assertEquals(
+    translation,
+    right(mkDefinition(scannerDefinition(), [])),
+  );
 });
 
 Deno.test("dynamic - an error in the scanner file propogates", async () => {
@@ -55,7 +59,7 @@ Deno.test("dynamic - an error in the scanner file propogates", async () => {
 Deno.test("dynamic - reference to terminal symbol", async () => {
   await assertTranslation(
     'uses "./test/simple.ll";\n' + "Program: Identifier;",
-    new Definition(
+    mkDefinition(
       scannerDefinition(),
       [
         mkProduction(
@@ -68,7 +72,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
 
   await assertTranslation(
     'uses "./test/simple.ll";\n' + "Program: Identifier Identifier;",
-    new Definition(
+    mkDefinition(
       scannerDefinition(),
       [
         mkProduction(
@@ -83,7 +87,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
 
   await assertTranslation(
     'uses "./test/simple.ll";\n' + "Program: {Identifier};",
-    new Definition(
+    mkDefinition(
       scannerDefinition(),
       [
         mkProduction(
@@ -96,7 +100,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
 
   await assertTranslation(
     'uses "./test/simple.ll";\n' + "Program: [Identifier];",
-    new Definition(
+    mkDefinition(
       scannerDefinition(),
       [
         mkProduction(
@@ -109,7 +113,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
 
   await assertTranslation(
     'uses "./test/simple.ll";\n' + "Program: (Identifier);",
-    new Definition(
+    mkDefinition(
       scannerDefinition(),
       [
         mkProduction(
@@ -122,7 +126,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
 
   await assertTranslation(
     'uses "./test/simple.ll";\n' + "Program: (Identifier | Identifier);",
-    new Definition(
+    mkDefinition(
       scannerDefinition(),
       [
         mkProduction(
@@ -150,7 +154,7 @@ Deno.test("dynamic - reference to non-terminal symbol", async () => {
   await assertTranslation(
     'uses "./test/simple.ll";\n' +
       "Program: Names;\nNames: Identifier {Identifier};",
-    new Definition(
+    mkDefinition(
       scannerDefinition(),
       [
         mkProduction(
@@ -207,7 +211,7 @@ Deno.test("dynamic - move literal strings into terminals", async () => {
 
   await assertTranslation(
     'uses "./test/simple.ll";\n' + 'Program: "hello" "." ;',
-    new Definition(
+    mkDefinition(
       scanner,
       [
         mkProduction(
@@ -227,7 +231,7 @@ Deno.test("dynamic - match literal strings with terminals", async () => {
 
   await assertTranslation(
     'uses "./test/simple.ll";\n' + 'Program: "uses" ";" ;',
-    new Definition(
+    mkDefinition(
       scanner,
       [
         mkProduction(
@@ -249,7 +253,7 @@ Deno.test("dynamic - create and match literal strings with terminals", async () 
 
   await assertTranslation(
     'uses "./test/simple.ll";\n' + 'Program: "from" ";" "from" ;',
-    new Definition(
+    mkDefinition(
       scanner,
       [
         mkProduction(

@@ -3,7 +3,7 @@ import * as Set from "../data/set.ts";
 
 import {
   calculateFirstFollow,
-  Definition,
+  mkDefinition,
   mkIdentifier,
   mkOptional,
   mkProduction,
@@ -22,7 +22,7 @@ Deno.test("definition - calculateFirstFollow - left recursive check", () => {
 
   Assert.assertEquals(
     calculateFirstFollow(
-      new Definition(
+      mkDefinition(
         scanner,
         [mkProduction("Program", { tag: "Identifier", name: "Program" })],
       ),
@@ -35,7 +35,7 @@ Deno.test("definition - calculateFirstFollow - left recursive check", () => {
 
   Assert.assertEquals(
     calculateFirstFollow(
-      new Definition(
+      mkDefinition(
         scanner,
         [
           mkProduction("Program", mkIdentifier("Fred")),
@@ -72,7 +72,7 @@ Deno.test("definition - calculateFirstFollow - sample grammar", () => {
     .addToken("g", new LADefinition.LiteralStringRegEx("g"))
     .addToken("h", new LADefinition.LiteralStringRegEx("h"));
 
-  const definition = new Definition(scanner, [
+  const definition = mkDefinition(scanner, [
     mkProduction(
       "S",
       mkSequence([
