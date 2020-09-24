@@ -1,5 +1,4 @@
-import { Either, right } from "../data/either.ts";
-import { Errors } from "./errors.ts";
+import { Either, left, right } from "../data/either.ts";
 import { mkScanner, Scanner, Token, TToken } from "./scanner.ts";
 
 export interface Visitor<
@@ -29,7 +28,7 @@ export interface Visitor<
   visitFactor5(a: Token): T_Factor;
 }
 
-export function parseExpr<
+export const parseExpr = <
   T_Definition,
   T_Production,
   T_Expr,
@@ -44,11 +43,9 @@ export function parseExpr<
     T_SequenceExpr,
     T_Factor
   >,
-): T_Expr {
-  return mkParser(mkScanner(input), visitor).expr();
-}
+): T_Expr => mkParser(mkScanner(input), visitor).expr();
 
-export function parseDefinition<
+export const parseDefinition = <
   T_Definition,
   T_Production,
   T_Expr,
@@ -63,9 +60,13 @@ export function parseDefinition<
     T_SequenceExpr,
     T_Factor
   >,
-): Either<Errors, T_Definition> {
-  return right(mkParser(mkScanner(input), visitor).definition());
-}
+): Either<SyntaxError, T_Definition> => {
+  try {
+    return right(mkParser(mkScanner(input), visitor).definition());
+  } catch (e) {
+    return left(e);
+  }
+};
 
 const mkParser = <
   T_Definition,
@@ -87,7 +88,11 @@ const mkParser = <
     if (isToken(ttoken)) {
       return nextToken();
     } else {
-      throw new SyntaxError(scanner.current(), [ttoken]);
+      throw {
+        tag: "SyntaxError",
+        found: scanner.current(),
+        expected: [ttoken],
+      };
     }
   };
 
@@ -185,21 +190,21 @@ const mkParser = <
 
         return visitor.visitFactor5(a1);
       } else {
-        throw new SyntaxError(scanner.current(), firstFactor);
+        throw {
+          tag: "SyntaxError",
+          found: scanner.current(),
+          expected: firstFactor,
+        };
       }
     },
   };
 };
 
-class SyntaxError {
+export type SyntaxError = {
+  tag: "SyntaxError";
   found: Token;
   expected: Array<TToken>;
-
-  constructor(found: Token, expected: Array<TToken>) {
-    this.found = found;
-    this.expected = expected;
-  }
-}
+};
 
 const firstFactor = [
   TToken.LiteralString,

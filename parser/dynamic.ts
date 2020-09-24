@@ -24,6 +24,7 @@ export function translate(
 ): Promise<Either<Errors.Errors, Definition>> {
   return Parser
     .parseDefinition(input, AST.visitor)
+    .mapLeft((e) => [e])
     .either(
       (l) => Promise.resolve(left(l)),
       async (ast) => {

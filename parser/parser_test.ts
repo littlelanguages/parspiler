@@ -2,7 +2,6 @@ import * as Assert from "../testing/asserts.ts";
 
 import * as AST from "./ast.ts";
 import { Either, right } from "../data/either.ts";
-import { Errors } from "./errors.ts";
 import { mkCoordinate, range } from "./location.ts";
 import * as Parser from "./parser.ts";
 
@@ -185,7 +184,9 @@ function parseExpr(text: string) {
   return Parser.parseExpr(text, AST.visitor);
 }
 
-function parseDefinition(text: string): Either<Errors, AST.Definition> {
+function parseDefinition(
+  text: string,
+): Either<Parser.SyntaxError, AST.Definition> {
   return Parser.parseDefinition(text, AST.visitor);
 }
 

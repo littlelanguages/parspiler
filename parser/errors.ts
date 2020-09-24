@@ -1,11 +1,14 @@
 import * as PP from "https://raw.githubusercontent.com/littlelanguages/deno-lib-text-prettyprint/0.3.0/mod.ts";
 import { Errors as ScanpilerErrors } from "../scanpiler.ts";
+import { TToken } from "./scanner.ts";
+import { SyntaxError } from "./parser.ts";
 import { Location } from "./location.ts";
 
 export type Errors = Array<ErrorItem>;
 
 export type ErrorItem =
   | ScannerDefinitionError
+  | SyntaxError
   | ScannerDefinitionFileDoesNotExistError
   | UnknownSymbolError
   | SymbolDefinedAsNonTerminalError
@@ -63,6 +66,14 @@ export function asDoc(
           ),
         ),
       ]);
+    case "SyntaxError":
+      return PP.hcat([
+        "Unexpected token ",
+        ttokenAsString(errorItem.found[0]),
+        ". Expected ",
+        PP.join(errorItem.expected.map(ttokenAsString), ", ", " or "),
+        ScanpilerErrors.errorLocation(errorItem.found[1], fileName),
+      ]);
     case "ScannerDefinitionFileDoesNotExistError":
       return PP.hcat([
         "Unable to read the scanner definition file ",
@@ -89,5 +100,38 @@ export function asDoc(
         " is already defined as a terminal",
         ScanpilerErrors.errorLocation(errorItem.location, fileName),
       ]);
+  }
+}
+
+export function ttokenAsString(ttoken: TToken): string {
+  switch (ttoken) {
+    case TToken.Uses:
+      return "uses";
+    case TToken.Bar:
+      return '"|"';
+    case TToken.Colon:
+      return '":"';
+    case TToken.LBracket:
+      return '"["';
+    case TToken.LCurly:
+      return '"{"';
+    case TToken.LParen:
+      return '"("';
+    case TToken.RBracket:
+      return '"]"';
+    case TToken.RCurly:
+      return '"}"';
+    case TToken.RParen:
+      return '")"';
+    case TToken.Semicolon:
+      return '";"';
+    case TToken.LiteralString:
+      return "literal string";
+    case TToken.Identifier:
+      return "identifier";
+    case TToken.EOS:
+      return "end of content";
+    case TToken.ERROR:
+      return "unknown token";
   }
 }
