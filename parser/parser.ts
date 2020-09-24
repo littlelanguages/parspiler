@@ -1,4 +1,4 @@
-import { Either, right, left } from "../data/either.ts";
+import { Either, right } from "../data/either.ts";
 import { Errors } from "./errors.ts";
 import { mkScanner, Scanner, Token, TToken } from "./scanner.ts";
 
@@ -45,7 +45,7 @@ export function parseExpr<
     T_Factor
   >,
 ): T_Expr {
-  return new Parser(mkScanner(input), visitor).expr();
+  return mkParser(mkScanner(input), visitor).expr();
 }
 
 export function parseDefinition<
@@ -64,144 +64,132 @@ export function parseDefinition<
     T_Factor
   >,
 ): Either<Errors, T_Definition> {
-  return right(new Parser(mkScanner(input), visitor).definition());
+  return right(mkParser(mkScanner(input), visitor).definition());
 }
 
-class Parser<
+const mkParser = <
   T_Definition,
   T_Production,
   T_Expr,
   T_SequenceExpr,
   T_Factor,
-> {
-  private scanner: Scanner;
-  private visitor: Visitor<
+>(
+  scanner: Scanner,
+  visitor: Visitor<
     T_Definition,
     T_Production,
     T_Expr,
     T_SequenceExpr,
     T_Factor
-  >;
-
-  constructor(
-    scanner: Scanner,
-    visitor: Visitor<
-      T_Definition,
-      T_Production,
-      T_Expr,
-      T_SequenceExpr,
-      T_Factor
-    >,
-  ) {
-    this.scanner = scanner;
-    this.visitor = visitor;
-  }
-
-  definition(): T_Definition {
-    const a1 = this.matchToken(TToken.Uses);
-    const a2 = this.matchToken(TToken.LiteralString);
-    const a3 = this.matchToken(TToken.Semicolon);
-    const a4: Array<T_Production> = [];
-
-    while (this.isTokens(firstProduction)) {
-      a4.push(this.production());
-    }
-
-    this.matchToken(TToken.EOS);
-
-    return this.visitor.visitDefinition(a1, a2, a3, a4);
-  }
-
-  production(): T_Production {
-    const a1 = this.matchToken(TToken.Identifier);
-    const a2 = this.matchToken(TToken.Colon);
-    const a3 = this.expr();
-    const a4 = this.matchToken(TToken.Semicolon);
-
-    return this.visitor.visitProduction(a1, a2, a3, a4);
-  }
-
-  expr(): T_Expr {
-    const a1: T_SequenceExpr = this.sequenceExpr();
-    const a2: Array<[Token, T_SequenceExpr]> = [];
-
-    while (this.isToken(TToken.Bar)) {
-      const a21 = this.nextToken();
-      const a22 = this.sequenceExpr();
-      a2.push([a21, a22]);
-    }
-
-    return this.visitor.visitExpr(a1, a2);
-  }
-
-  sequenceExpr(): T_SequenceExpr {
-    const a1 = [];
-
-    while (this.isTokens(firstFactor)) {
-      a1.push(this.factor());
-    }
-
-    return this.visitor.visitSequenceExpr(a1);
-  }
-
-  factor(): T_Factor {
-    if (this.isToken(TToken.LiteralString)) {
-      const a1 = this.nextToken();
-
-      return this.visitor.visitFactor1(a1);
-    } else if (this.isToken(TToken.LParen)) {
-      const a1 = this.nextToken();
-      const a2 = this.expr();
-      const a3 = this.matchToken(TToken.RParen);
-
-      return this.visitor.visitFactor2(a1, a2, a3);
-    } else if (this.isToken(TToken.LCurly)) {
-      const a1 = this.nextToken();
-      const a2 = this.expr();
-      const a3 = this.matchToken(TToken.RCurly);
-
-      return this.visitor.visitFactor3(a1, a2, a3);
-    } else if (this.isToken(TToken.LBracket)) {
-      const a1 = this.nextToken();
-      const a2 = this.expr();
-      const a3 = this.matchToken(TToken.RBracket);
-
-      return this.visitor.visitFactor4(a1, a2, a3);
-    } else if (this.isToken(TToken.Identifier)) {
-      const a1 = this.nextToken();
-
-      return this.visitor.visitFactor5(a1);
+  >,
+) => {
+  const matchToken = (ttoken: TToken): Token => {
+    if (isToken(ttoken)) {
+      return nextToken();
     } else {
-      throw new SyntaxError(this.scanner.current(), firstFactor);
+      throw new SyntaxError(scanner.current(), [ttoken]);
     }
-  }
+  };
 
-  private matchToken(ttoken: TToken): Token {
-    if (this.isToken(ttoken)) {
-      return this.nextToken();
-    } else {
-      throw new SyntaxError(this.scanner.current(), [ttoken]);
-    }
-  }
+  const isToken = (ttoken: TToken): boolean => currentToken() == ttoken;
 
-  private isToken(ttoken: TToken): boolean {
-    return this.currentToken() == ttoken;
-  }
+  const isTokens = (ttokens: Array<TToken>): boolean =>
+    ttokens.includes(currentToken());
 
-  private isTokens(ttokens: Array<TToken>): boolean {
-    return ttokens.includes(this.currentToken());
-  }
+  const currentToken = (): TToken => scanner.current()[0];
 
-  private currentToken(): TToken {
-    return this.scanner.current()[0];
-  }
-
-  private nextToken(): Token {
-    const result = this.scanner.current();
-    this.scanner.next();
+  const nextToken = (): Token => {
+    const result = scanner.current();
+    scanner.next();
     return result;
-  }
-}
+  };
+
+  return {
+    definition: function (): T_Definition {
+      const a1 = matchToken(TToken.Uses);
+      const a2 = matchToken(TToken.LiteralString);
+      const a3 = matchToken(TToken.Semicolon);
+      const a4: Array<T_Production> = [];
+
+      while (isTokens(firstProduction)) {
+        const a41 = this.production();
+
+        a4.push(a41);
+      }
+
+      matchToken(TToken.EOS);
+
+      return visitor.visitDefinition(a1, a2, a3, a4);
+    },
+
+    production: function (): T_Production {
+      const a1 = matchToken(TToken.Identifier);
+      const a2 = matchToken(TToken.Colon);
+      const a3 = this.expr();
+      const a4 = matchToken(TToken.Semicolon);
+
+      return visitor.visitProduction(a1, a2, a3, a4);
+    },
+
+    expr: function (): T_Expr {
+      const a1: T_SequenceExpr = this.sequenceExpr();
+      const a2: Array<[Token, T_SequenceExpr]> = [];
+
+      while (isToken(TToken.Bar)) {
+        const a21 = nextToken();
+        const a22 = this.sequenceExpr();
+
+        a2.push([a21, a22]);
+      }
+
+      return visitor.visitExpr(a1, a2);
+    },
+
+    sequenceExpr: function (): T_SequenceExpr {
+      const a1 = [];
+
+      while (isTokens(firstFactor)) {
+        const a11 = this.factor();
+
+        a1.push(a11);
+      }
+
+      return visitor.visitSequenceExpr(a1);
+    },
+
+    factor: function (): T_Factor {
+      if (isToken(TToken.LiteralString)) {
+        const a1 = nextToken();
+
+        return visitor.visitFactor1(a1);
+      } else if (isToken(TToken.LParen)) {
+        const a1 = nextToken();
+        const a2 = this.expr();
+        const a3 = matchToken(TToken.RParen);
+
+        return visitor.visitFactor2(a1, a2, a3);
+      } else if (isToken(TToken.LCurly)) {
+        const a1 = nextToken();
+        const a2 = this.expr();
+        const a3 = matchToken(TToken.RCurly);
+
+        return visitor.visitFactor3(a1, a2, a3);
+      } else if (isToken(TToken.LBracket)) {
+        const a1 = nextToken();
+        const a2 = this.expr();
+        const a3 = matchToken(TToken.RBracket);
+
+        return visitor.visitFactor4(a1, a2, a3);
+      } else if (isToken(TToken.Identifier)) {
+        const a1 = nextToken();
+
+        return visitor.visitFactor5(a1);
+      } else {
+        throw new SyntaxError(scanner.current(), firstFactor);
+      }
+    },
+  };
+};
 
 class SyntaxError {
   found: Token;
