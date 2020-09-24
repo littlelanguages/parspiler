@@ -196,6 +196,4 @@ const firstFactor = [
   TToken.LBracket,
   TToken.Identifier,
 ];
-const firstProduction = [
-  TToken.Identifier,
-];
+const firstProduction = [TToken.Identifier];
