@@ -265,7 +265,7 @@ const writeMkParser = (definition: Definition): PP.Doc => {
               "];",
             ],
           ),
-          assign(e.exprs.map((_, i) => `${variable}${i + 1}`)),
+          assign([variable]),
         ]);
       case "Alternative":
         return PP.vcat([
@@ -281,11 +281,10 @@ const writeMkParser = (definition: Definition): PP.Doc => {
                 2,
                 PP.vcat([
                   writeExpr(
-                    `${variable}${i + 1}`,
-                    (_) => PP.empty,
+                    variable,
+                    () => assign([variable]),
                     es,
                   ),
-                  assign([`${variable}${i + 1}`]),
                 ]),
               ),
             ])
@@ -326,11 +325,8 @@ const writeMkParser = (definition: Definition): PP.Doc => {
             2,
             PP.vcat([
               writeExpr(
-                `${variable}`,
-                (ns) =>
-                  (ns.length == 1)
-                    ? PP.hcat([variable, ".push(", ns[0], ")"])
-                    : PP.hcat([variable, ".push([", PP.join(ns, ", "), "])"]),
+                variable,
+                () => PP.hcat([variable, ".push(", variable, ")"]),
                 e.expr,
               ),
               assign([variable]),
@@ -359,17 +355,14 @@ const writeMkParser = (definition: Definition): PP.Doc => {
             2,
             PP.vcat([
               writeExpr(
-                `${variable}1`,
-                (ns) =>
-                  (ns.length == 1)
-                    ? PP.hcat([variable, " = ", ns[0], ";"])
-                    : PP.hcat([variable, " = [", PP.join(ns, ", "), "];"]),
+                `${variable}t`,
+                () => PP.hcat([variable, " = ", variable, "t;"]),
                 e.expr,
               ),
-              assign([variable + "1"]),
             ]),
           ),
           "}",
+          assign([`${variable}t`]),
         ]);
     }
   };
