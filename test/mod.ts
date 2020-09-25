@@ -113,7 +113,7 @@ const writeExprType = (definition: Definition, e: Expr): PP.Doc => {
 
 const writeVisitor = (definition: Definition): PP.Doc => {
   const writeParameters = (e: Expr): PP.Doc => {
-    if (e.tag == "Sequence") {
+    if (e.tag === "Sequence") {
       return PP.hcat([
         "(",
         PP.join(
@@ -135,7 +135,7 @@ const writeVisitor = (definition: Definition): PP.Doc => {
     const write = (name: string, e: Expr, returnType: string): PP.Doc =>
       PP.hcat(["visit", name, writeParameters(e), ": T_", returnType, ";"]);
 
-    return (production.expr.tag == "Alternative")
+    return (production.expr.tag === "Alternative")
       ? PP.vcat(
         production.expr.exprs.map((e, i) =>
           write(`${production.lhs}${i + 1}`, e, production.lhs)
@@ -199,12 +199,6 @@ const writeMkParser = (definition: Definition): PP.Doc => {
   ];
   const gtvs = writeGenericTypeVariables(definition);
 
-  const writeExpectedTokens = (e: Expr): PP.Doc => {
-    const f = [...first(firsts, e)].filter((n) => n !== "");
-
-    return PP.hcat(["[", PP.join(f.map((n) => `TToken.${n}`), ", "), "]"]);
-  };
-
   const writeExpr = (
     variable: string,
     assign: (a: string) => PP.Doc,
@@ -251,10 +245,10 @@ const writeMkParser = (definition: Definition): PP.Doc => {
           PP.vcat(e.exprs.map((es, i) =>
             PP.vcat([
               PP.hcat([
-                (i == 0) ? "if" : "} else if",
-                " (isTokens(",
-                writeExpectedTokens(es),
-                ")) {",
+                (i === 0) ? "if" : "} else if",
+                " (",
+                writeIsToken(es),
+                ") {",
               ]),
               PP.nest(
                 2,
@@ -289,11 +283,7 @@ const writeMkParser = (definition: Definition): PP.Doc => {
             "> = [];",
           ]),
           PP.blank,
-          PP.hcat([
-            "while (isTokens(",
-            writeExpectedTokens(e.expr),
-            ")) {",
-          ]),
+          PP.hcat(["while (", writeIsToken(e.expr), ") {"]),
           PP.nest(
             2,
             PP.vcat([
@@ -319,11 +309,7 @@ const writeMkParser = (definition: Definition): PP.Doc => {
             " | undefined = undefined;",
           ]),
           PP.blank,
-          PP.hcat([
-            "if (isTokens(",
-            writeExpectedTokens(e.expr),
-            ")) {",
-          ]),
+          PP.hcat(["if (", writeIsToken(e.expr), ") {"]),
           PP.nest(
             2,
             writeExpr(
@@ -378,7 +364,7 @@ const writeMkParser = (definition: Definition): PP.Doc => {
             "> = [];",
           ]),
           PP.blank,
-          PP.hcat(["while (isTokens(", writeExpectedTokens(e.expr), ")) {"]),
+          PP.hcat(["while (", writeIsToken(e.expr), ") {"]),
           PP.nest(
             2,
             writeExpr(
@@ -398,7 +384,7 @@ const writeMkParser = (definition: Definition): PP.Doc => {
             " = undefined;",
           ]),
           PP.blank,
-          PP.hcat(["if (isTokens(", writeExpectedTokens(e.expr), ")) {"]),
+          PP.hcat(["if (", writeIsToken(e.expr), ") {"]),
           PP.nest(
             2,
             writeExpr("at", (ns) => PP.hcat(["a = ", ns, ";"]), e.expr),
@@ -423,10 +409,10 @@ const writeMkParser = (definition: Definition): PP.Doc => {
         PP.vcat(e.exprs.map((es, i) =>
           PP.vcat([
             PP.hcat([
-              (i == 0) ? "if" : "} else if",
-              " (isTokens(",
-              writeExpectedTokens(es),
-              ")) {",
+              (i === 0) ? "if" : "} else if",
+              " (",
+              writeIsToken(es),
+              ") {",
             ]),
             PP.nest(
               2,
@@ -437,7 +423,6 @@ const writeMkParser = (definition: Definition): PP.Doc => {
             ),
           ])
         )),
-
         "} else {",
         PP.nest(
           2,
@@ -470,6 +455,20 @@ const writeMkParser = (definition: Definition): PP.Doc => {
       ),
     );
 
+  const writeExpectedTokens = (e: Expr): PP.Doc => {
+    const f = [...first(firsts, e)].filter((n) => n !== "");
+
+    return PP.hcat(["[", PP.join(f.map((n) => `TToken.${n}`), ", "), "]"]);
+  };
+
+  const writeIsToken = (e: Expr): PP.Doc => {
+    const f = [...first(firsts, e)].filter((n) => n !== "");
+
+    return (f.length === 1) ? PP.hcat(["isToken(TToken.", f[0], ")"]) : PP.hcat(
+      ["isTokens([", PP.join(f.map((n) => `TToken.${n}`), ", "), "])"],
+    );
+  };
+
   return PP.vcat([
     PP.hcat([
       "export const mkParser = ",
@@ -497,7 +496,7 @@ const writeMkParser = (definition: Definition): PP.Doc => {
         ),
         "}",
         PP.blank,
-        "const isToken = (ttoken: TToken): boolean => currentToken() == ttoken;",
+        "const isToken = (ttoken: TToken): boolean => currentToken() === ttoken;",
         PP.blank,
         "const isTokens = (ttokens: Array<TToken>): boolean => ttokens.includes(currentToken());",
         PP.blank,
@@ -533,7 +532,7 @@ class FS {
 
   constructor(srcFileName: string, options: CommandOptions) {
     this.sourceFile = Path.parse(srcFileName);
-    if (this.sourceFile.ext == undefined) {
+    if (this.sourceFile.ext === undefined) {
       this.sourceFile.ext = ".ll";
     }
     this.options = options;
@@ -544,7 +543,7 @@ class FS {
   }
 
   sourceFileDateTime(): number {
-    if (this.sourceFileStat == undefined) {
+    if (this.sourceFileStat === undefined) {
       this.sourceFileStat = Deno.lstatSync(this.sourceFileName());
     }
 
