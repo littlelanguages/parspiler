@@ -378,22 +378,20 @@ const writeMkParser = (definition: Definition): PP.Doc => {
     switch (e.tag) {
       case "Identifier":
         if (definition.nonTerminalNames.has(e.name)) {
-          return PP.vcat([
-            PP.hcat(
-              [
-                "const a1: ",
-                writeExprType(definition, e),
-                " = this.",
-                parseFunctioName(e.name),
-                "();",
-              ],
-            ),
-            PP.hcat(["return visitor.visit", visitorName, "(a1);"]),
+          return PP.hcat([
+            "return visitor.visit",
+            visitorName,
+            "(this.",
+            parseFunctioName(e.name),
+            "());",
           ]);
         } else {
-          return PP.vcat([
-            PP.hcat(["const a1: Token = matchToken(TToken.", e.name, ");"]),
-            PP.hcat(["return visitor.visit", visitorName, "(a1);"]),
+          return PP.hcat([
+            "return visitor.visit",
+            visitorName,
+            "(matchToken(TToken.",
+            e.name,
+            "));",
           ]);
         }
       case "Sequence":
