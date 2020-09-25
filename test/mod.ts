@@ -114,18 +114,16 @@ const writeExprType = (definition: Definition, e: Expr): PP.Doc => {
 const writeVisitor = (definition: Definition): PP.Doc => {
   const writeParameters = (e: Expr): PP.Doc => {
     if (e.tag == "Sequence") {
-      return PP.hcat(
-        [
-          "(",
-          PP.join(
-            e.exprs.map((es, i) =>
-              PP.hcat([`a${i + 1}`, ": ", writeExprType(definition, es)])
-            ),
-            ", ",
+      return PP.hcat([
+        "(",
+        PP.join(
+          e.exprs.map((es, i) =>
+            PP.hcat([`a${i + 1}`, ": ", writeExprType(definition, es)])
           ),
-          ")",
-        ],
-      );
+          ", ",
+        ),
+        ")",
+      ]);
     } else {
       return PP.hcat(["(a: ", writeExprType(definition, e), ")"]);
     }
@@ -162,32 +160,28 @@ const writeExportedParser = (definition: Definition): PP.Doc => {
   const name = definition.productions[0].lhs;
 
   return PP.vcat([
-    PP.hcat(
-      [
-        "export const parse",
-        name,
-        " = ",
-        gtvs,
-        "(input: string, visitor: Visitor",
-        gtvs,
-        "): Either<SyntaxError, T_",
-        name,
-        "> => {",
-      ],
-    ),
+    PP.hcat([
+      "export const parse",
+      name,
+      " = ",
+      gtvs,
+      "(input: string, visitor: Visitor",
+      gtvs,
+      "): Either<SyntaxError, T_",
+      name,
+      "> => {",
+    ]),
     PP.nest(
       2,
       PP.vcat([
         "try {",
         PP.nest(
           2,
-          PP.hcat(
-            [
-              "return right(mkParser(mkScanner(input), visitor).",
-              parseFunctioName(name),
-              "());",
-            ],
-          ),
+          PP.hcat([
+            "return right(mkParser(mkScanner(input), visitor).",
+            parseFunctioName(name),
+            "());",
+          ]),
         ),
         "} catch(e) {",
         PP.nest(2, "return left(e);"),
@@ -199,13 +193,13 @@ const writeExportedParser = (definition: Definition): PP.Doc => {
 };
 
 const writeMkParser = (definition: Definition): PP.Doc => {
-  const [firsts, follows] = calculateFirstFollow(definition) as [
+  const [firsts, _] = calculateFirstFollow(definition) as [
     Map<string, Set<string>>,
     Map<string, Set<string>>,
   ];
   const gtvs = writeGenericTypeVariables(definition);
 
-  const writeIsTokens = (e: Expr): PP.Doc => {
+  const writeExpectedTokens = (e: Expr): PP.Doc => {
     const f = [...first(firsts, e)].filter((n) => n !== "");
 
     return PP.hcat(["[", PP.join(f.map((n) => `TToken.${n}`), ", "), "]"]);
@@ -218,35 +212,22 @@ const writeMkParser = (definition: Definition): PP.Doc => {
   ): PP.Doc => {
     switch (e.tag) {
       case "Identifier":
-        if (definition.nonTerminalNames.has(e.name)) {
-          return PP.vcat([
-            PP.hcat(
-              [
-                "const ",
-                variable,
-                ": ",
-                writeExprType(definition, e),
-                " = this.",
-                parseFunctioName(e.name),
-                "();",
-              ],
-            ),
-            assign(variable),
-          ]);
-        } else {
-          return PP.vcat([
-            PP.hcat(
-              [
-                "const ",
-                variable,
-                ": Token = matchToken(TToken.",
-                e.name,
-                ");",
-              ],
-            ),
-            assign(variable),
-          ]);
-        }
+        const [type, expression] = (definition.nonTerminalNames.has(e.name))
+          ? [writeExprType(definition, e), `this.${parseFunctioName(e.name)}()`]
+          : ["Token", `matchToken(TToken.${e.name})`];
+
+        return PP.vcat([
+          PP.hcat([
+            "const ",
+            variable,
+            ": ",
+            type,
+            " = ",
+            expression,
+            ";",
+          ]),
+          assign(variable),
+        ]);
       case "Sequence":
         return PP.vcat([
           PP.vcat(
@@ -254,17 +235,15 @@ const writeMkParser = (definition: Definition): PP.Doc => {
               writeExpr(`${variable}${i + 1}`, (_) => PP.empty, es)
             ),
           ),
-          PP.hcat(
-            [
-              "const ",
-              variable,
-              ": ",
-              writeExprType(definition, e),
-              " = [",
-              PP.join(e.exprs.map((_, i) => `${variable}${i + 1}`), ", "),
-              "];",
-            ],
-          ),
+          PP.hcat([
+            "const ",
+            variable,
+            ": ",
+            writeExprType(definition, e),
+            " = [",
+            PP.join(e.exprs.map((_, i) => `${variable}${i + 1}`), ", "),
+            "];",
+          ]),
           assign(variable),
         ]);
       case "Alternative":
@@ -274,18 +253,16 @@ const writeMkParser = (definition: Definition): PP.Doc => {
               PP.hcat([
                 (i == 0) ? "if" : "} else if",
                 " (isTokens(",
-                writeIsTokens(es),
+                writeExpectedTokens(es),
                 ")) {",
               ]),
               PP.nest(
                 2,
-                PP.vcat([
-                  writeExpr(
-                    variable,
-                    () => assign(variable),
-                    es,
-                  ),
-                ]),
+                writeExpr(
+                  variable,
+                  () => assign(variable),
+                  es,
+                ),
               ),
             ])
           )),
@@ -293,32 +270,28 @@ const writeMkParser = (definition: Definition): PP.Doc => {
           "} else {",
           PP.nest(
             2,
-            PP.hcat(
-              [
-                'throw { tag: "SyntaxError", found: scanner.current(), expected: ',
-                writeIsTokens(e),
-                "};",
-              ],
-            ),
+            PP.hcat([
+              'throw { tag: "SyntaxError", found: scanner.current(), expected: ',
+              writeExpectedTokens(e),
+              "};",
+            ]),
           ),
           "}",
         ]);
 
       case "Many":
         return PP.vcat([
-          PP.hcat(
-            [
-              "const ",
-              variable,
-              ": Array<",
-              writeExprType(definition, e.expr),
-              "> = [];",
-            ],
-          ),
+          PP.hcat([
+            "const ",
+            variable,
+            ": Array<",
+            writeExprType(definition, e.expr),
+            "> = [];",
+          ]),
           PP.blank,
           PP.hcat([
             "while (isTokens(",
-            writeIsTokens(e.expr),
+            writeExpectedTokens(e.expr),
             ")) {",
           ]),
           PP.nest(
@@ -338,30 +311,26 @@ const writeMkParser = (definition: Definition): PP.Doc => {
         const tmpVariable = `${variable}t`;
 
         return PP.vcat([
-          PP.hcat(
-            [
-              "let ",
-              variable,
-              ": ",
-              writeExprType(definition, e.expr),
-              " | undefined = undefined;",
-            ],
-          ),
+          PP.hcat([
+            "let ",
+            variable,
+            ": ",
+            writeExprType(definition, e.expr),
+            " | undefined = undefined;",
+          ]),
           PP.blank,
           PP.hcat([
             "if (isTokens(",
-            writeIsTokens(e.expr),
+            writeExpectedTokens(e.expr),
             ")) {",
           ]),
           PP.nest(
             2,
-            PP.vcat([
-              writeExpr(
-                tmpVariable,
-                () => PP.hcat([variable, " = ", tmpVariable, ";"]),
-                e.expr,
-              ),
-            ]),
+            writeExpr(
+              tmpVariable,
+              () => PP.hcat([variable, " = ", tmpVariable, ";"]),
+              e.expr,
+            ),
           ),
           "}",
           assign(variable),
@@ -372,46 +341,44 @@ const writeMkParser = (definition: Definition): PP.Doc => {
   const writeTopLevelExpresseion = (visitorName: string, e: Expr): PP.Doc => {
     switch (e.tag) {
       case "Identifier":
-        if (definition.nonTerminalNames.has(e.name)) {
-          return PP.hcat([
+        return (definition.nonTerminalNames.has(e.name))
+          ? PP.hcat([
             "return visitor.visit",
             visitorName,
             "(this.",
             parseFunctioName(e.name),
             "());",
-          ]);
-        } else {
-          return PP.hcat([
+          ])
+          : PP.hcat([
             "return visitor.visit",
             visitorName,
             "(matchToken(TToken.",
             e.name,
             "));",
           ]);
-        }
       case "Sequence":
         return PP.vcat([
           PP.vcat(
             e.exprs.map((es, i) => writeExpr(`a${i + 1}`, (_) => PP.empty, es)),
           ),
-          PP.hcat(
-            [
-              "return visitor.visit",
-              visitorName,
-              "(",
-              PP.join(e.exprs.map((_, i) => `a${i + 1}`), ", "),
-              ");",
-            ],
-          ),
+          PP.hcat([
+            "return visitor.visit",
+            visitorName,
+            "(",
+            PP.join(e.exprs.map((_, i) => `a${i + 1}`), ", "),
+            ");",
+          ]),
         ]);
 
       case "Many":
         return PP.vcat([
-          PP.hcat(
-            ["const a1: Array<", writeExprType(definition, e.expr), "> = [];"],
-          ),
+          PP.hcat([
+            "const a1: Array<",
+            writeExprType(definition, e.expr),
+            "> = [];",
+          ]),
           PP.blank,
-          PP.hcat(["while (isTokens(", writeIsTokens(e.expr), ")) {"]),
+          PP.hcat(["while (isTokens(", writeExpectedTokens(e.expr), ")) {"]),
           PP.nest(
             2,
             writeExpr(
@@ -425,11 +392,13 @@ const writeMkParser = (definition: Definition): PP.Doc => {
         ]);
       case "Optional":
         return PP.vcat([
-          PP.hcat(
-            ["let a: ", writeExprType(definition, e), " = undefined;"],
-          ),
+          PP.hcat([
+            "let a: ",
+            writeExprType(definition, e),
+            " = undefined;",
+          ]),
           PP.blank,
-          PP.hcat(["if (isTokens(", writeIsTokens(e.expr), ")) {"]),
+          PP.hcat(["if (isTokens(", writeExpectedTokens(e.expr), ")) {"]),
           PP.nest(
             2,
             writeExpr("at", (ns) => PP.hcat(["a = ", ns, ";"]), e.expr),
@@ -456,7 +425,7 @@ const writeMkParser = (definition: Definition): PP.Doc => {
             PP.hcat([
               (i == 0) ? "if" : "} else if",
               " (isTokens(",
-              writeIsTokens(es),
+              writeExpectedTokens(es),
               ")) {",
             ]),
             PP.nest(
@@ -472,13 +441,11 @@ const writeMkParser = (definition: Definition): PP.Doc => {
         "} else {",
         PP.nest(
           2,
-          PP.hcat(
-            [
-              'throw { tag: "SyntaxError", found: scanner.current(), expected: ',
-              writeIsTokens(e),
-              "};",
-            ],
-          ),
+          PP.hcat([
+            'throw { tag: "SyntaxError", found: scanner.current(), expected: ',
+            writeExpectedTokens(e),
+            "};",
+          ]),
         ),
         "}",
       ]);
@@ -491,14 +458,12 @@ const writeMkParser = (definition: Definition): PP.Doc => {
     PP.vcat(
       definition.productions.map((production) =>
         PP.vcat([
-          PP.hcat(
-            [
-              parseFunctioName(production.lhs),
-              ": function (): T_",
-              production.lhs,
-              " {",
-            ],
-          ),
+          PP.hcat([
+            parseFunctioName(production.lhs),
+            ": function (): T_",
+            production.lhs,
+            " {",
+          ]),
           PP.nest(2, writeTopLevelBody(production)),
           "},",
         ])
@@ -506,15 +471,13 @@ const writeMkParser = (definition: Definition): PP.Doc => {
     );
 
   return PP.vcat([
-    PP.hcat(
-      [
-        "export const mkParser = ",
-        gtvs,
-        "(scanner: Scanner, visitor: Visitor",
-        gtvs,
-        ") => {",
-      ],
-    ),
+    PP.hcat([
+      "export const mkParser = ",
+      gtvs,
+      "(scanner: Scanner, visitor: Visitor",
+      gtvs,
+      ") => {",
+    ]),
     PP.nest(
       2,
       PP.vcat([
