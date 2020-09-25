@@ -4,6 +4,7 @@ import { OutputMode, exec } from "https://deno.land/x/exec@0.0.5/mod.ts";
 import { denoCommand } from "./mod.ts";
 
 await test("simple");
+await test("parspiler");
 
 async function test(name: string) {
   Deno.test(name, async () => {

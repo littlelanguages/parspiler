@@ -1,5 +1,5 @@
 import * as Path from "https://deno.land/std@0.63.0/path/mod.ts";
-import * as PP from "https://raw.githubusercontent.com/littlelanguages/deno-lib-text-prettyprint/0.3.0/mod.ts";
+import * as PP from "https://raw.githubusercontent.com/littlelanguages/deno-lib-text-prettyprint/0.3.1/mod.ts";
 
 import * as Errors from "../parser/errors.ts";
 import { translate } from "../parser/dynamic.ts";
@@ -67,6 +67,8 @@ async function writeParser(
     writeExportedParser(definition),
     PP.blank,
     writeMkParser(definition),
+    PP.blank,
+    writeSyntaxError(),
     PP.blank,
     PP.blank,
   ]);
@@ -273,7 +275,9 @@ const writeMkParser = (definition: Definition): PP.Doc => {
           "}",
         ]);
 
-      case "Many":
+      case "Many": {
+        const tmpVariable = `${variable}t`;
+
         return PP.vcat([
           PP.hcat([
             "const ",
@@ -288,8 +292,8 @@ const writeMkParser = (definition: Definition): PP.Doc => {
             2,
             PP.vcat([
               writeExpr(
-                variable,
-                () => PP.hcat([variable, ".push(", variable, ")"]),
+                tmpVariable,
+                () => PP.hcat([variable, ".push(", tmpVariable, ")"]),
                 e.expr,
               ),
               assign(variable),
@@ -297,7 +301,8 @@ const writeMkParser = (definition: Definition): PP.Doc => {
           ),
           "}",
         ]);
-      case "Optional":
+      }
+      case "Optional": {
         const tmpVariable = `${variable}t`;
 
         return PP.vcat([
@@ -321,6 +326,7 @@ const writeMkParser = (definition: Definition): PP.Doc => {
           "}",
           assign(variable),
         ]);
+      }
     }
   };
 
@@ -359,7 +365,7 @@ const writeMkParser = (definition: Definition): PP.Doc => {
       case "Many":
         return PP.vcat([
           PP.hcat([
-            "const a1: Array<",
+            "const a: Array<",
             writeExprType(definition, e.expr),
             "> = [];",
           ]),
@@ -368,13 +374,13 @@ const writeMkParser = (definition: Definition): PP.Doc => {
           PP.nest(
             2,
             writeExpr(
-              "a11",
-              (ns) => PP.hcat(["a1.push(", ns, ")"]),
+              "at",
+              (n) => PP.hcat(["a.push(", n, ")"]),
               e.expr,
             ),
           ),
           "}",
-          PP.hcat(["return visitor.visit", visitorName, "(a1);"]),
+          PP.hcat(["return visitor.visit", visitorName, "(a);"]),
         ]);
       case "Optional":
         return PP.vcat([
@@ -521,6 +527,20 @@ const writeMkParser = (definition: Definition): PP.Doc => {
     "}",
   ]);
 };
+
+const writeSyntaxError = (): PP.Doc =>
+  PP.vcat([
+    "export type SyntaxError = {",
+    PP.nest(
+      2,
+      PP.vcat([
+        'tag: "SyntaxError";',
+        "found: Token;",
+        "expected: Array<TToken>;",
+      ]),
+    ),
+    "};",
+  ]);
 
 const parseFunctioName = (name: string): string =>
   `${name.slice(0, 1).toLowerCase()}${name.slice(1)}`;
