@@ -5,6 +5,7 @@ import {
   calculateFirstFollow,
   mkDefinition,
   mkIdentifier,
+  mkMany,
   mkOptional,
   mkProduction,
   mkSequence,
@@ -126,4 +127,32 @@ Deno.test("definition - calculateFirstFollow - sample grammar", () => {
       ]),
     ],
   );
+});
+
+Deno.test({
+  name: "definition - calculateFirstFollow - fix",
+  // only: true,
+  fn: () => {
+    const scanner = new LADefinition.Definition()
+      .addToken("Identifier", new LADefinition.LiteralStringRegEx("x"));
+
+    const definition = mkDefinition(scanner, [
+      mkProduction(
+        "Id",
+        mkIdentifier("Identifier"),
+      ),
+      mkProduction(
+        "OptionalIds",
+        mkOptional(
+          mkIdentifier("Ids"),
+        ),
+      ),
+      mkProduction(
+        "Ids",
+        mkMany(mkIdentifier("Identifier")),
+      ),
+    ]);
+
+    calculateFirstFollow(definition);
+  },
 });

@@ -9,4 +9,4 @@ then
     exit -1
 fi
 
-deno test --allow-read --allow-write --allow-run
+deno test --inspect-brk -A --allow-read --allow-write --allow-run

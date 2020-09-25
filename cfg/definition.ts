@@ -406,7 +406,11 @@ const calculateFollow = (
         const newFollows = Set.minus(
           Set.union(
             terminals,
-            Array.union([...nonTerminals].map((nt) => follows.get(nt)!)),
+            Array.union([...nonTerminals].map((nt) => {
+              const v = follows.get(nt);
+
+              return (v == undefined) ? Set.emptySet as Set<string> : v;
+            })),
           ),
           Set.setOf(p[0]),
         );
