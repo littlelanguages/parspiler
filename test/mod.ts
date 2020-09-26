@@ -40,14 +40,17 @@ export async function denoCommand(
         Deno.stdout,
       ), (definition) => {
       if (options.verbose) {
-        console.log(`Writing parser.ts`);
+        console.log(`Writing scanner.ts`);
       }
       return writeScanner(
         fs.targetFileName(["scanner", ".ts"]),
         definition.scanner,
-      ).then((_) =>
-        writeParser(fs.targetFileName(["parser", ".ts"]), definition)
-      );
+      ).then((_) => {
+        if (options.verbose) {
+          console.log(`Writing parser.ts`);
+        }
+        return writeParser(fs.targetFileName(["parser", ".ts"]), definition);
+      });
     });
   } else {
     return Promise.resolve();
@@ -114,9 +117,9 @@ const writeExprType = (definition: Definition, e: Expr): PP.Doc => {
 };
 
 const writeVisitor = (definition: Definition): PP.Doc => {
-  const writeParameters = (e: Expr): PP.Doc => {
-    if (e.tag === "Sequence") {
-      return PP.hcat([
+  const writeParameters = (e: Expr): PP.Doc =>
+    (e.tag === "Sequence")
+      ? PP.hcat([
         "(",
         PP.join(
           e.exprs.map((es, i) =>
@@ -125,11 +128,8 @@ const writeVisitor = (definition: Definition): PP.Doc => {
           ", ",
         ),
         ")",
-      ]);
-    } else {
-      return PP.hcat(["(a: ", writeExprType(definition, e), ")"]);
-    }
-  };
+      ])
+      : PP.hcat(["(a: ", writeExprType(definition, e), ")"]);
 
   const writeProduction = (
     production: Production,
@@ -361,7 +361,6 @@ const writeMkParser = (definition: Definition): PP.Doc => {
             ");",
           ]),
         ]);
-
       case "Many":
         return PP.vcat([
           PP.hcat([
@@ -410,8 +409,8 @@ const writeMkParser = (definition: Definition): PP.Doc => {
   const writeTopLevelBody = (production: Production): PP.Doc => {
     const e = production.expr;
 
-    if (e.tag === "Alternative") {
-      return PP.vcat([
+    return (e.tag === "Alternative")
+      ? PP.vcat([
         PP.vcat(e.exprs.map((es, i) =>
           PP.vcat([
             PP.hcat([
@@ -439,10 +438,8 @@ const writeMkParser = (definition: Definition): PP.Doc => {
           ]),
         ),
         "}",
-      ]);
-    } else {
-      return writeTopLevelExpresseion(production.lhs, production.expr);
-    }
+      ])
+      : writeTopLevelExpresseion(production.lhs, production.expr);
   };
 
   const writeParseFunctions = (): PP.Doc =>
