@@ -18,10 +18,10 @@ export type CommandOptions = {
   verbose: boolean;
 };
 
-export async function denoCommand(
+export const denoCommand = async (
   fileName: string,
   options: CommandOptions,
-): Promise<void> {
+): Promise<void> => {
   const fs = new FS(fileName, options);
 
   if (
@@ -55,14 +55,14 @@ export async function denoCommand(
   } else {
     return Promise.resolve();
   }
-}
+};
 
-async function writeParser(
+const writeParser = async (
   fileName: string,
   definition: Definition,
-): Promise<void> {
+): Promise<void> => {
   const parserDoc = PP.vcat([
-    'import { Either, left, right } from "https://raw.githubusercontent.com/littlelanguages/deno-lib-data-either/0.0.1/mod.ts";',
+    'import { Either, left, right } from "../../data/either.ts";',
     'import { mkScanner, Scanner, Token, TToken } from "./scanner.ts";',
     PP.blank,
     writeVisitor(definition),
@@ -76,11 +76,10 @@ async function writeParser(
     PP.blank,
   ]);
 
-  return Deno
-    .create(fileName)
-    .then((w) => PP.render(parserDoc, w).then((_) => w.close()))
-    .then((_) => {});
-}
+  const writer = await Deno.create(fileName);
+  await PP.render(parserDoc, writer);
+  return writer.close();
+};
 
 const writeGenericTypeVariables = (definition: Definition): PP.Doc =>
   PP.hcat(
