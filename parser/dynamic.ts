@@ -78,7 +78,7 @@ class Translate {
   process(): Either<Errors.Errors, Definition> {
     this.translateProductions();
 
-    return (this.errors.length == 0)
+    return (this.errors.length === 0)
       ? right(mkDefinition(this.scannerDefinition, this.productions))
       : left(this.errors);
   }
@@ -143,13 +143,13 @@ class Translate {
   }
 }
 
-function addLiteralToken(
+const addLiteralToken = (
   scanner: ScanpilerDefinition.Definition,
   text: string,
-): string {
+): string => {
   const token = scanner.literalMatch(text);
 
-  if (token == undefined) {
+  if (token === undefined) {
     const tokenName = calculateTokenName(scanner, text);
 
     scanner.addToken(
@@ -162,17 +162,17 @@ function addLiteralToken(
   } else {
     return token[0];
   }
-}
+};
 
-export function calculateTokenName(
+export const calculateTokenName = (
   scanner: ScanpilerDefinition.Definition,
   text: string,
-): string {
+): string => {
   let candidateName = "";
 
-  function appendName(name: string) {
+  const appendName = (name: string) => {
     candidateName = candidateName + name;
-  }
+  };
 
   for (const c of text) {
     const cc = c.charCodeAt(0);
@@ -204,7 +204,7 @@ export function calculateTokenName(
   } else {
     return candidateName;
   }
-}
+};
 
 const characterMappings = [
   "Space", // 32
