@@ -39,7 +39,7 @@ export function translate(
               errors: e,
             }] as Errors.Errors
           ).andThen((scannerDefinition) =>
-            new Translate(ast, scannerDefinition).process()
+            translateAST(ast, scannerDefinition)
           );
         } catch (_) {
           return left(
@@ -56,63 +56,20 @@ export function translate(
     ) as Promise<Either<Errors.Errors, Definition>>;
 }
 
-class Translate {
-  private ast: AST.Definition;
-  private scannerDefinition: ScanpilerDefinition.Definition;
-  private productions: Array<Production> = [];
-  private errors: Errors.Errors = [];
-  private nonTerminals = Set.emptySet as Set<string>;
-  private terminals = Set.emptySet as Set<string>;
+const translateAST = (
+  ast: AST.Definition,
+  scannerDefinition: ScanpilerDefinition.Definition,
+): Either<Errors.Errors, Definition> => {
+  const nonTerminals = Set.setOf(ast.productions.map((p) => p.name.id));
+  const terminals = Set.setOf(scannerDefinition.tokens.map((t) => t[0]));
 
-  constructor(
-    ast: AST.Definition,
-    scannerDefinition: ScanpilerDefinition.Definition,
-  ) {
-    this.ast = ast;
-    this.scannerDefinition = scannerDefinition;
+  const errors: Errors.Errors = [];
 
-    this.nonTerminals = Set.setOf(ast.productions.map((p) => p.name.id));
-    this.terminals = Set.setOf(scannerDefinition.tokens.map((t) => t[0]));
-  }
-
-  process(): Either<Errors.Errors, Definition> {
-    this.translateProductions();
-
-    return (this.errors.length === 0)
-      ? right(mkDefinition(this.scannerDefinition, this.productions))
-      : left(this.errors);
-  }
-
-  private translateProductions() {
-    this.ast.productions.forEach((p) => this.translateProduction(p));
-  }
-
-  private translateProduction(production: AST.Production) {
-    if (this.terminals.has(production.name.id)) {
-      this.errors.push({
-        tag: "SymbolDefinedAsTerminalError",
-        location: production.name.location,
-        name: production.name.id,
-      });
-    }
-    if (Set.setOf(this.productions.map((p) => p.lhs)).has(production.name.id)) {
-      this.errors.push({
-        tag: "SymbolDefinedAsNonTerminalError",
-        location: production.name.location,
-        name: production.name.id,
-      });
-    }
-
-    this.productions.push(
-      mkProduction(production.name.id, this.translateExpr(production.expr)),
-    );
-  }
-
-  private translateExpr(expr: AST.Expr): Expr {
+  const translateExpr = (expr: AST.Expr): Expr => {
     switch (expr.tag) {
       case "ID":
-        if (!this.nonTerminals.has(expr.id) && !this.terminals.has(expr.id)) {
-          this.errors.push({
+        if (!nonTerminals.has(expr.id) && !terminals.has(expr.id)) {
+          errors.push({
             tag: "UnknownSymbolError",
             location: expr.location,
             name: expr.id,
@@ -123,25 +80,60 @@ class Translate {
       case "LiteralString":
         return mkIdentifier(
           addLiteralToken(
-            this.scannerDefinition,
+            scannerDefinition,
             dropRight(1, dropLeft(1, expr.value)),
           ),
         );
       case "ParenExpr":
-        return this.translateExpr(expr.expr);
+        return translateExpr(expr.expr);
       case "SequenceExpr":
-        return mkSequence(expr.exprs.map((e) => this.translateExpr(e)));
+        return mkSequence(expr.exprs.map((e) => translateExpr(e)));
       case "AlternativeExpr":
-        return mkAlternative(expr.exprs.map((e) => this.translateExpr(e)));
+        return mkAlternative(expr.exprs.map((e) => translateExpr(e)));
       case "ManyExpr":
-        return mkMany(this.translateExpr(expr.expr));
+        return mkMany(translateExpr(expr.expr));
       case "OptionalExpr":
-        return mkOptional(this.translateExpr(expr.expr));
+        return mkOptional(translateExpr(expr.expr));
       default:
         throw new Error(`TBD: translateExpr: ${expr}`);
     }
-  }
-}
+  };
+
+  const translateProductions = () => {
+    const productions: Array<Production> = [];
+
+    const translateProduction = (production: AST.Production) => {
+      if (terminals.has(production.name.id)) {
+        errors.push({
+          tag: "SymbolDefinedAsTerminalError",
+          location: production.name.location,
+          name: production.name.id,
+        });
+      }
+      if (Set.setOf(productions.map((p) => p.lhs)).has(production.name.id)) {
+        errors.push({
+          tag: "SymbolDefinedAsNonTerminalError",
+          location: production.name.location,
+          name: production.name.id,
+        });
+      }
+
+      productions.push(
+        mkProduction(production.name.id, translateExpr(production.expr)),
+      );
+    };
+
+    ast.productions.forEach((p) => translateProduction(p));
+
+    return productions;
+  };
+
+  const productions = translateProductions();
+
+  return (errors.length === 0)
+    ? right(mkDefinition(scannerDefinition, productions))
+    : left(errors);
+};
 
 const addLiteralToken = (
   scanner: ScanpilerDefinition.Definition,
