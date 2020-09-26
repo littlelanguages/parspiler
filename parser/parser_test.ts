@@ -1,9 +1,9 @@
 import * as Assert from "../testing/asserts.ts";
 
 import * as AST from "./ast.ts";
-import { Either, right } from "../data/either.ts";
+import { right } from "../data/either.ts";
 import { mkCoordinate, range } from "./location.ts";
-import { SyntaxError, mkParser, parseDefinition } from "./parser.ts";
+import { mkParser, parseDefinition } from "./parser.ts";
 import { mkScanner } from "./scanner.ts";
 
 Deno.test('parser - expr - "while"', () => {
