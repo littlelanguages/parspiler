@@ -1,4 +1,4 @@
-import * as Assert from "https://deno.land/std@0.68.0/testing/asserts.ts";
+import * as Assert from "../../testing/asserts.ts";
 
 import { mkParser, Visitor } from "./parser.ts";
 import { Token, mkScanner } from "./scanner.ts";
