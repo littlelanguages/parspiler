@@ -62,7 +62,7 @@ async function writeParser(
   definition: Definition,
 ): Promise<void> {
   const parserDoc = PP.vcat([
-    'import { Either, left, right } from "../../data/either.ts";',
+    'import { Either, left, right } from "https://raw.githubusercontent.com/littlelanguages/deno-lib-data-either/0.0.1/mod.ts";',
     'import { mkScanner, Scanner, Token, TToken } from "./scanner.ts";',
     PP.blank,
     writeVisitor(definition),
