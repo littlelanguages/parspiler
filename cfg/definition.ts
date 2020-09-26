@@ -406,11 +406,11 @@ const calculateFollow = (
         const newFollows = Set.minus(
           Set.union(
             terminals,
-            Array.union([...nonTerminals].map((nt) => {
-              const v = follows.get(nt);
-
-              return (v == undefined) ? Set.emptySet as Set<string> : v;
-            })),
+            Array.union(
+              [...nonTerminals].map((nt) =>
+                follows.get(nt) ?? Set.emptySet as Set<string>
+              ),
+            ),
           ),
           Set.setOf(p[0]),
         );
@@ -433,8 +433,7 @@ const calculateFollow = (
 export function first(firsts: Map<string, Set<string>>, e: Expr): Set<string> {
   switch (e.tag) {
     case "Identifier":
-      const f = firsts.get(e.name);
-      return (f === undefined) ? Set.setOf(e.name) : f;
+      return firsts.get(e.name) ?? Set.setOf(e.name);
     case "Sequence":
       let result = Set.emptySet as Set<string>;
       for (const es of e.exprs) {
