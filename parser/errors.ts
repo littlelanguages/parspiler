@@ -1,4 +1,4 @@
-import * as PP from "https://raw.githubusercontent.com/littlelanguages/deno-lib-text-prettyprint/0.3.0/mod.ts";
+import * as PP from "https://raw.githubusercontent.com/littlelanguages/deno-lib-text-prettyprint/0.3.1/mod.ts";
 import { Errors as ScanpilerErrors } from "../scanpiler.ts";
 import { TToken } from "./scanner.ts";
 import { SyntaxError } from "./parser.ts";
