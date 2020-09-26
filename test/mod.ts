@@ -30,7 +30,7 @@ export const denoCommand = async (
     fs.sourceFileDateTime() > fs.targetFileDateTime(["parser", ".ts"])
   ) {
     const src = await Deno.readTextFile(fs.sourceFileName());
-    const parseResult = await translate(src);
+    const parseResult = await translate(fs.sourceFileName(), src);
 
     return parseResult.either((es) =>
       PP.render(

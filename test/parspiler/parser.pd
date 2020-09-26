@@ -1,4 +1,4 @@
-uses "./test/parspiler/scanner.ll";
+uses "scanner.ll";
 
 Definition: 
     "uses" LiteralString ";"

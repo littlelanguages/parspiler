@@ -33,7 +33,10 @@ Deno.test("dynamic - scanner file does not exist", async () => {
 });
 
 Deno.test("dynamic - scanner file exists", async () => {
-  const translation = await translate('uses "./test/simple.ll";');
+  const translation = await translate(
+    "./sample.pd",
+    'uses "./test/simple.ll";',
+  );
 
   Assert.assertEquals(
     translation,
@@ -295,13 +298,13 @@ Deno.test("dynamic - resolve token name with clash", async () => {
 });
 
 async function assertTranslation(content: string, definition: Definition) {
-  const x = await translate(content);
+  const x = await translate("./sample.pd", content);
 
   Assert.assertEquals(x, right(definition));
 }
 
 async function assertTranslateErrors(content: string, errors: Errors.Errors) {
-  const x = await translate(content);
+  const x = await translate("./sample.pd", content);
 
   Assert.assertEquals(x, left(errors));
 }

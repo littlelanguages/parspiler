@@ -1,3 +1,5 @@
+import * as Path from "https://deno.land/std@0.63.0/path/mod.ts";
+
 import { Either, right, left } from "../data/either.ts";
 import { dropLeft, dropRight } from "../data/string.ts";
 import * as Set from "../data/set.ts";
@@ -19,10 +21,11 @@ import {
 } from "../cfg/definition.ts";
 import { Dynamic, Definition as ScanpilerDefinition } from "../scanpiler.ts";
 
-export function translate(
+export const translate = (
+  inputFileName: string,
   input: string,
-): Promise<Either<Errors.Errors, Definition>> {
-  return Parser
+): Promise<Either<Errors.Errors, Definition>> =>
+  Parser
     .parseDefinition(input, AST.visitor)
     .mapLeft((e) => [e])
     .either(
@@ -30,7 +33,10 @@ export function translate(
       async (ast) => {
         const fileName = dropRight(1, dropLeft(1, ast.uses.value));
         try {
-          const input = await Deno.readTextFile(fileName);
+          const input = await Deno.readTextFile(relativeTo(
+            inputFileName,
+            fileName,
+          ));
           return Dynamic.translate(input).mapLeft((e) =>
             [{
               tag: "ScannerDefinitionError",
@@ -54,7 +60,20 @@ export function translate(
         }
       },
     ) as Promise<Either<Errors.Errors, Definition>>;
-}
+
+const relativeTo = (src: string, target: string): string => {
+  let srcParse = Path.parse(src);
+  const targetParse = Path.parse(target);
+  return (srcParse.root !== targetParse.root ||
+      targetParse.dir.startsWith("/"))
+    ? target
+    : Path.normalize(Path.format(
+      Object.assign(
+        targetParse,
+        { dir: srcParse.dir + "/" + targetParse.dir },
+      ),
+    ));
+};
 
 const translateAST = (
   ast: AST.Definition,

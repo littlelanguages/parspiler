@@ -1,4 +1,4 @@
-uses "./test/simple/scanner.ll";
+uses "./scanner.ll";
 
 Id: Identifier;
 
