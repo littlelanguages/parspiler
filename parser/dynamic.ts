@@ -1,6 +1,6 @@
 import * as Path from "https://deno.land/std@0.63.0/path/mod.ts";
 
-import { Either, right, left } from "../data/either.ts";
+import { Either, left } from "../data/either.ts";
 import { dropLeft, dropRight } from "../data/string.ts";
 import * as Set from "../data/set.ts";
 
@@ -150,7 +150,7 @@ const translateAST = (
   const productions = translateProductions();
 
   return (errors.length === 0)
-    ? right(mkDefinition(scannerDefinition, productions))
+    ? mkDefinition(scannerDefinition, productions)
     : left(errors);
 };
 

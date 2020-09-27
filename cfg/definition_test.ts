@@ -1,8 +1,10 @@
 import * as Assert from "../testing/asserts.ts";
 import * as Set from "../data/set.ts";
+import { Either, left, right } from "../data/either.ts";
 
 import {
-  calculateFirstFollow,
+  Definition,
+  FirstFollowErrors,
   mkDefinition,
   mkIdentifier,
   mkMany,
@@ -11,6 +13,7 @@ import {
   mkSequence,
 } from "./definition.ts";
 import { Dynamic, Definition as LADefinition } from "../scanpiler.ts";
+import { assertEquals } from "../testing/asserts.ts";
 
 function scannerDefinition(): LADefinition.Definition {
   return Dynamic
@@ -22,29 +25,25 @@ Deno.test("definition - calculateFirstFollow - left recursive check", () => {
   const scanner = scannerDefinition();
 
   Assert.assertEquals(
-    calculateFirstFollow(
-      mkDefinition(
-        scanner,
-        [mkProduction("Program", { tag: "Identifier", name: "Program" })],
-      ),
+    mkDefinition(
+      scanner,
+      [mkProduction("Program", { tag: "Identifier", name: "Program" })],
     ),
-    [{
+    left([{
       tag: "LeftRecursiveGrammarError",
       name: "Program",
-    }],
+    }]),
   );
 
   Assert.assertEquals(
-    calculateFirstFollow(
-      mkDefinition(
-        scanner,
-        [
-          mkProduction("Program", mkIdentifier("Fred")),
-          mkProduction("Fred", mkIdentifier("Program")),
-        ],
-      ),
+    mkDefinition(
+      scanner,
+      [
+        mkProduction("Program", mkIdentifier("Fred")),
+        mkProduction("Fred", mkIdentifier("Program")),
+      ],
     ),
-    [
+    left([
       {
         tag: "LeftRecursiveGrammarError",
         name: "Program",
@@ -53,7 +52,7 @@ Deno.test("definition - calculateFirstFollow - left recursive check", () => {
         tag: "LeftRecursiveGrammarError",
         name: "Fred",
       },
-    ],
+    ]),
   );
 });
 
@@ -104,8 +103,8 @@ Deno.test("definition - calculateFirstFollow - sample grammar", () => {
     mkProduction("F", mkOptional(mkIdentifier("f"))),
   ]);
 
-  Assert.assertEquals(
-    calculateFirstFollow(definition),
+  assertFirstFollowEquals(
+    definition,
     [
       new Map(
         [
@@ -152,7 +151,15 @@ Deno.test({
         mkMany(mkIdentifier("Identifier")),
       ),
     ]);
-
-    calculateFirstFollow(definition);
   },
 });
+
+const assertFirstFollowEquals = (
+  definition: Either<FirstFollowErrors, Definition>,
+  firstFollows: [Map<string, Set<string>>, Map<string, Set<string>>],
+) => {
+  assertEquals(
+    definition.map((d) => [d.firsts, d.follows]),
+    right(firstFollows),
+  );
+};

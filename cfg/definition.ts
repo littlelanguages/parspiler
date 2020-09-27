@@ -1,5 +1,6 @@
 import * as Array from "../data/array.ts";
 import * as Set from "../data/set.ts";
+import { Either, left, right } from "../data/either.ts";
 
 import { Scanner } from "../scanpiler.ts";
 
@@ -8,17 +9,42 @@ export type Definition = {
   productions: Array<Production>;
   terminalNames: Set<string>;
   nonTerminalNames: Set<string>;
+  firsts: Map<string, Set<string>>;
+  follows: Map<string, Set<string>>;
 };
 
 export const mkDefinition = (
   scanner: Scanner.Definition,
   productions: Array<Production>,
-): Definition => ({
-  scanner,
-  productions,
-  terminalNames: Set.setOf(scanner.tokens.map((t) => t[0])),
-  nonTerminalNames: Set.setOf(productions.map((p) => p.lhs)),
-});
+): Either<FirstFollowErrors, Definition> => {
+  const terminalNames = Set.setOf(scanner.tokens.map((t) => t[0]));
+  const nonTerminalNames = Set.setOf(productions.map((p) => p.lhs));
+
+  const calculationDefinition = {
+    scanner,
+    productions,
+    terminalNames,
+    nonTerminalNames,
+  };
+
+  return validateNotLeftRecursive(calculationDefinition).map((_) => {
+    const firsts = productions.length === 0
+      ? new Map()
+      : calculateFirst(calculationDefinition);
+    const follows = productions.length === 0
+      ? new Map()
+      : calculateFollow(calculationDefinition, firsts);
+
+    return {
+      scanner,
+      productions,
+      terminalNames,
+      nonTerminalNames,
+      firsts,
+      follows,
+    };
+  });
+};
 
 export type Production = {
   lhs: string;
@@ -85,25 +111,16 @@ export type LeftRecursiveGrammarError = {
   name: string;
 };
 
-export function calculateFirstFollow(
-  definition: Definition,
-): [Map<string, Set<string>>, Map<string, Set<string>>] | FirstFollowErrors {
-  const errors = validateNotLeftRecursive(definition);
-
-  if (errors.length === 0) {
-    const firsts = calculateFirst(definition);
-    const follows = calculateFollow(definition, firsts);
-    return [firsts, follows];
-  } else {
-    return errors;
-  }
-}
+type CalculationDefinition = {
+  scanner: Scanner.Definition;
+  productions: Array<Production>;
+  terminalNames: Set<string>;
+  nonTerminalNames: Set<string>;
+};
 
 const validateNotLeftRecursive = (
-  definition: Definition,
-): FirstFollowErrors => {
-  const nonTerminalNames = definition.nonTerminalNames;
-
+  definition: { productions: Array<Production>; nonTerminalNames: Set<string> },
+): Either<FirstFollowErrors, void> => {
   const leftRecursionDependencies = (e: Expr): Set<string> => {
     const isEpsilonable = (e: Expr): boolean => {
       switch (e.tag) {
@@ -170,18 +187,24 @@ const validateNotLeftRecursive = (
       p,
     ) => [
       p.lhs,
-      Set.intersection(leftRecursionDependencies(p.expr), nonTerminalNames),
+      Set.intersection(
+        leftRecursionDependencies(p.expr),
+        definition.nonTerminalNames,
+      ),
     ]),
   );
 
   closure(leftRecursiveDependencies);
 
-  return [...leftRecursiveDependencies].filter((dep) => dep[1].has(dep[0]))
+  const errors: FirstFollowErrors = [...leftRecursiveDependencies]
+    .filter((dep) => dep[1].has(dep[0]))
     .map((dep) => ({ tag: "LeftRecursiveGrammarError", name: dep[0] }));
+
+  return (errors.length === 0) ? right(undefined) : left(errors);
 };
 
 const calculateEmptyNonTerminalNames = (
-  definition: Definition,
+  definition: CalculationDefinition,
 ): Set<string> => {
   const calculateEmptyNonTerminals = (): Map<string, boolean> => {
     const emptyNonTerminals: Map<string, boolean> = new Map();
@@ -239,7 +262,9 @@ const calculateEmptyNonTerminalNames = (
   );
 };
 
-const calculateFirst = (definition: Definition): Map<string, Set<string>> => {
+const calculateFirst = (
+  definition: CalculationDefinition,
+): Map<string, Set<string>> => {
   const emptyNonTerminalNames = calculateEmptyNonTerminalNames(definition);
   const terminalNames = definition.terminalNames;
   const nonTerminalNames = definition.nonTerminalNames;
@@ -320,7 +345,7 @@ const calculateFirst = (definition: Definition): Map<string, Set<string>> => {
 };
 
 const calculateFollow = (
-  definition: Definition,
+  definition: CalculationDefinition,
   firsts: Map<string, Set<string>>,
 ): Map<string, Set<string>> => {
   const calculateInitialFollow = (

@@ -4,7 +4,6 @@ import * as PP from "https://raw.githubusercontent.com/littlelanguages/deno-lib-
 import * as Errors from "../parser/errors.ts";
 import { translate } from "../parser/dynamic.ts";
 import {
-  calculateFirstFollow,
   Definition,
   Expr,
   first,
@@ -194,10 +193,6 @@ const writeExportedParser = (definition: Definition): PP.Doc => {
 };
 
 const writeMkParser = (definition: Definition): PP.Doc => {
-  const [firsts, _] = calculateFirstFollow(definition) as [
-    Map<string, Set<string>>,
-    Map<string, Set<string>>,
-  ];
   const gtvs = writeGenericTypeVariables(definition);
 
   const writeExpr = (
@@ -458,13 +453,13 @@ const writeMkParser = (definition: Definition): PP.Doc => {
     );
 
   const writeExpectedTokens = (e: Expr): PP.Doc => {
-    const f = [...first(firsts, e)].filter((n) => n !== "");
+    const f = [...first(definition.firsts, e)].filter((n) => n !== "");
 
     return PP.hcat(["[", PP.join(f.map((n) => `TToken.${n}`), ", "), "]"]);
   };
 
   const writeIsToken = (e: Expr): PP.Doc => {
-    const f = [...first(firsts, e)].filter((n) => n !== "");
+    const f = [...first(definition.firsts, e)].filter((n) => n !== "");
 
     return (f.length === 1) ? PP.hcat(["isToken(TToken.", f[0], ")"]) : PP.hcat(
       ["isTokens([", PP.join(f.map((n) => `TToken.${n}`), ", "), "])"],

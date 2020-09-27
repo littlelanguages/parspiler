@@ -1,4 +1,4 @@
-import { left, right } from "../data/either.ts";
+import { Either, left } from "../data/either.ts";
 import * as Assert from "../testing/asserts.ts";
 
 import * as Errors from "./errors.ts";
@@ -6,6 +6,7 @@ import { calculateTokenName, translate } from "./dynamic.ts";
 import { range } from "./location.ts";
 import {
   Definition,
+  FirstFollowErrors,
   mkAlternative,
   mkDefinition,
   mkIdentifier,
@@ -40,7 +41,7 @@ Deno.test("dynamic - scanner file exists", async () => {
 
   Assert.assertEquals(
     translation,
-    right(mkDefinition(scannerDefinition(), [])),
+    mkDefinition(scannerDefinition(), []),
   );
 });
 
@@ -297,10 +298,13 @@ Deno.test("dynamic - resolve token name with clash", async () => {
   Assert.assertEquals(calculateTokenName(scanner, "Identifier"), "Identifier2");
 });
 
-async function assertTranslation(content: string, definition: Definition) {
+async function assertTranslation(
+  content: string,
+  definition: Either<FirstFollowErrors, Definition>,
+) {
   const x = await translate("./sample.pd", content);
 
-  Assert.assertEquals(x, right(definition));
+  Assert.assertEquals(x, definition);
 }
 
 async function assertTranslateErrors(content: string, errors: Errors.Errors) {
