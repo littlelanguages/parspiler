@@ -1,14 +1,14 @@
 import * as Path from "https://deno.land/std@0.63.0/path/mod.ts";
 import * as PP from "https://raw.githubusercontent.com/littlelanguages/deno-lib-text-prettyprint/0.3.1/mod.ts";
 
-import * as Errors from "../parser/errors.ts";
-import { translate } from "../parser/dynamic.ts";
 import {
   Definition,
   Expr,
-  first,
   Production,
-} from "../cfg/definition.ts";
+  asDoc,
+  first,
+  translate,
+} from "../mod.ts";
 import { writeScanner } from "https://raw.githubusercontent.com/littlelanguages/scanpiler-tool-deno/0.2.1/mod.ts";
 
 export type CommandOptions = {
@@ -34,7 +34,7 @@ export const denoCommand = async (
     return parseResult.either((es) =>
       PP.render(
         PP.vcat(
-          es.map((e) => PP.hcat(["Error: ", Errors.asDoc(e)])).concat(PP.blank),
+          es.map((e) => PP.hcat(["Error: ", asDoc(e)])).concat(PP.blank),
         ),
         Deno.stdout,
       ), (definition) => {

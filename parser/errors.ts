@@ -1,4 +1,5 @@
 import * as PP from "https://raw.githubusercontent.com/littlelanguages/deno-lib-text-prettyprint/0.3.1/mod.ts";
+
 import { Errors as ScanpilerErrors } from "../scanpiler.ts";
 import { TToken } from "./scanner.ts";
 import { SyntaxError } from "./parser.ts";
@@ -47,10 +48,10 @@ export type SymbolDefinedAsTerminalError = {
   name: string;
 };
 
-export function asDoc(
+export const asDoc = (
   errorItem: ErrorItem,
   fileName: string | undefined = undefined,
-): PP.Doc {
+): PP.Doc => {
   switch (errorItem.tag) {
     case "ScannerDefinitionError":
       return PP.vcat([
@@ -161,7 +162,7 @@ export function asDoc(
         ),
       ]);
   }
-}
+};
 
 const exprToDoc = (e: Expr): PP.Doc => {
   return PP.text(JSON.stringify(e, null, 2));
