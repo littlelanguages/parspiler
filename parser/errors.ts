@@ -123,6 +123,43 @@ export function asDoc(
           )),
         ),
       ]);
+    case "AmbiguousSequenceError":
+      return PP.vcat([
+        PP.hcat(
+          ["The production ", errorItem.name, " has an ambigious sequence:"],
+        ),
+        PP.nest(
+          2,
+          PP.vcat([
+            "Head:",
+            PP.nest(
+              2,
+              PP.vcat([
+                exprToDoc(errorItem.hd[0]),
+                PP.nest(
+                  2,
+                  PP.hcat(
+                    ["First: {", PP.join([...errorItem.hd[1]], ", "), "}"],
+                  ),
+                ),
+              ]),
+            ),
+            "Rest:",
+            PP.nest(
+              2,
+              PP.vcat([
+                exprToDoc(errorItem.tl[0]),
+                PP.nest(
+                  2,
+                  PP.hcat(
+                    ["First: {", PP.join([...errorItem.tl[1]], ", "), "}"],
+                  ),
+                ),
+              ]),
+            ),
+          ]),
+        ),
+      ]);
   }
 }
 

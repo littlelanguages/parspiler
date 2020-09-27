@@ -173,6 +173,52 @@ Deno.test("definition - ll(1) error - alternative selection ambiguity", () => {
   );
 });
 
+Deno.test("definition - ll(1) error - ambiguous sequence error", () => {
+  const scanner = scannerDefinition();
+
+  Assert.assertEquals(
+    mkDefinition(
+      scanner,
+      [mkProduction(
+        "Program",
+        mkSequence(
+          [mkOptional(mkIdentifier("Identifier")), mkIdentifier("Identifier")],
+        ),
+      )],
+    ),
+    left([{
+      tag: "AmbiguousSequenceError",
+      name: "Program",
+      hd: [
+        mkOptional(mkIdentifier("Identifier")),
+        Set.setOf(["Identifier", ""]),
+      ],
+      tl: [mkSequence([mkIdentifier("Identifier")]), Set.setOf("Identifier")],
+    }]),
+  );
+
+  Assert.assertEquals(
+    mkDefinition(
+      scanner,
+      [mkProduction(
+        "Program",
+        mkSequence(
+          [mkMany(mkIdentifier("Identifier")), mkIdentifier("Identifier")],
+        ),
+      )],
+    ),
+    left([{
+      tag: "AmbiguousSequenceError",
+      name: "Program",
+      hd: [
+        mkMany(mkIdentifier("Identifier")),
+        Set.setOf(["Identifier", ""]),
+      ],
+      tl: [mkSequence([mkIdentifier("Identifier")]), Set.setOf("Identifier")],
+    }]),
+  );
+});
+
 const assertFirstFollowEquals = (
   definition: Either<DefinitionErrors, Definition>,
   firstFollows: [Map<string, Set<string>>, Map<string, Set<string>>],

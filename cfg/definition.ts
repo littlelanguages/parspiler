@@ -106,7 +106,8 @@ export type DefinitionErrors = Array<DefinitionError>;
 
 export type DefinitionError =
   | LeftRecursiveGrammarError
-  | AmbiguousAlternativesError;
+  | AmbiguousAlternativesError
+  | AmbiguousSequenceError;
 
 export type LeftRecursiveGrammarError = {
   tag: "LeftRecursiveGrammarError";
@@ -117,6 +118,13 @@ export type AmbiguousAlternativesError = {
   tag: "AmbiguousAlternativesError";
   name: string;
   alternatives: Array<[Expr, Set<string>]>;
+};
+
+export type AmbiguousSequenceError = {
+  tag: "AmbiguousSequenceError";
+  name: string;
+  hd: [Expr, Set<string>];
+  tl: [Expr, Set<string>];
 };
 
 type CalculationDefinition = {
@@ -219,8 +227,40 @@ const validateLL1 = (
       switch (e.tag) {
         case "Identifier":
           return [];
-        case "Sequence":
-          return e.exprs.flatMap(validateExpression);
+        case "Sequence": {
+          const errors = e.exprs.flatMap(validateExpression);
+
+          let seq = e.exprs;
+
+          while (seq.length > 1) {
+            let [hd, ...tl] = seq;
+
+            const firstHd = first(definition.firsts, hd);
+            if (firstHd.has("")) {
+              const exprTl: Expr = { tag: "Sequence", exprs: tl };
+              const firstTl = first(
+                definition.firsts,
+                exprTl,
+              );
+              if (
+                firstHd.has("") &&
+                Set.intersection(Set.minus(firstHd, Set.setOf("")), firstTl)
+                    .size > 0
+              ) {
+                errors.push({
+                  tag: "AmbiguousSequenceError",
+                  name: production.lhs,
+                  hd: [hd, firstHd],
+                  tl: [exprTl, firstTl],
+                });
+              }
+            }
+
+            seq = tl;
+          }
+
+          return errors;
+        }
         case "Alternative": {
           const alts: Array<[Expr, Set<string>]> = e.exprs.map((
             es,
@@ -234,13 +274,11 @@ const validateLL1 = (
           }
 
           return error
-            ? [
-              {
-                tag: "AmbiguousAlternativesError",
-                name: production.lhs,
-                alternatives: alts,
-              },
-            ]
+            ? [{
+              tag: "AmbiguousAlternativesError",
+              name: production.lhs,
+              alternatives: alts,
+            }]
             : [];
         }
         case "Many":
