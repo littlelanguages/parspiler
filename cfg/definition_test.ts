@@ -4,7 +4,7 @@ import { Either, left, right } from "../data/either.ts";
 
 import {
   Definition,
-  FirstFollowErrors,
+  DefinitionErrors,
   mkDefinition,
   mkIdentifier,
   mkMany,
@@ -155,7 +155,7 @@ Deno.test({
 });
 
 const assertFirstFollowEquals = (
-  definition: Either<FirstFollowErrors, Definition>,
+  definition: Either<DefinitionErrors, Definition>,
   firstFollows: [Map<string, Set<string>>, Map<string, Set<string>>],
 ) => {
   assertEquals(

@@ -3,7 +3,7 @@ import { Errors as ScanpilerErrors } from "../scanpiler.ts";
 import { TToken } from "./scanner.ts";
 import { SyntaxError } from "./parser.ts";
 import { Location } from "./location.ts";
-import { FirstFollowError } from "../cfg/definition.ts";
+import { DefinitionError } from "../cfg/definition.ts";
 
 export type Errors = Array<ErrorItem>;
 
@@ -14,7 +14,7 @@ export type ErrorItem =
   | UnknownSymbolError
   | SymbolDefinedAsNonTerminalError
   | SymbolDefinedAsTerminalError
-  | FirstFollowError;
+  | DefinitionError;
 
 export type ScannerDefinitionError = {
   tag: "ScannerDefinitionError";

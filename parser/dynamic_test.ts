@@ -6,7 +6,7 @@ import { calculateTokenName, translate } from "./dynamic.ts";
 import { range } from "./location.ts";
 import {
   Definition,
-  FirstFollowErrors,
+  DefinitionErrors,
   mkAlternative,
   mkDefinition,
   mkIdentifier,
@@ -300,7 +300,7 @@ Deno.test("dynamic - resolve token name with clash", async () => {
 
 async function assertTranslation(
   content: string,
-  definition: Either<FirstFollowErrors, Definition>,
+  definition: Either<DefinitionErrors, Definition>,
 ) {
   const x = await translate("./sample.pd", content);
 

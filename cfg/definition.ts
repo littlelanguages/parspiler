@@ -16,7 +16,7 @@ export type Definition = {
 export const mkDefinition = (
   scanner: Scanner.Definition,
   productions: Array<Production>,
-): Either<FirstFollowErrors, Definition> => {
+): Either<DefinitionErrors, Definition> => {
   const terminalNames = Set.setOf(scanner.tokens.map((t) => t[0]));
   const nonTerminalNames = Set.setOf(productions.map((p) => p.lhs));
 
@@ -102,9 +102,9 @@ export const mkMany = (expr: Expr): Many => ({ tag: "Many", expr });
 
 export const mkOptional = (expr: Expr): Optional => ({ tag: "Optional", expr });
 
-export type FirstFollowErrors = Array<FirstFollowError>;
+export type DefinitionErrors = Array<DefinitionError>;
 
-export type FirstFollowError = LeftRecursiveGrammarError;
+export type DefinitionError = LeftRecursiveGrammarError;
 
 export type LeftRecursiveGrammarError = {
   tag: "LeftRecursiveGrammarError";
@@ -120,7 +120,7 @@ type CalculationDefinition = {
 
 const validateNotLeftRecursive = (
   definition: { productions: Array<Production>; nonTerminalNames: Set<string> },
-): Either<FirstFollowErrors, void> => {
+): Either<DefinitionErrors, void> => {
   const leftRecursionDependencies = (e: Expr): Set<string> => {
     const isEpsilonable = (e: Expr): boolean => {
       switch (e.tag) {
@@ -196,7 +196,7 @@ const validateNotLeftRecursive = (
 
   closure(leftRecursiveDependencies);
 
-  const errors: FirstFollowErrors = [...leftRecursiveDependencies]
+  const errors: DefinitionErrors = [...leftRecursiveDependencies]
     .filter((dep) => dep[1].has(dep[0]))
     .map((dep) => ({ tag: "LeftRecursiveGrammarError", name: dep[0] }));
 
