@@ -5,6 +5,7 @@ import { Either, left, right } from "../data/either.ts";
 import {
   Definition,
   DefinitionErrors,
+  mkAlternative,
   mkDefinition,
   mkIdentifier,
   mkMany,
@@ -27,7 +28,7 @@ Deno.test("definition - calculateFirstFollow - left recursive check", () => {
   Assert.assertEquals(
     mkDefinition(
       scanner,
-      [mkProduction("Program", { tag: "Identifier", name: "Program" })],
+      [mkProduction("Program", mkIdentifier("Program"))],
     ),
     left([{
       tag: "LeftRecursiveGrammarError",
@@ -148,6 +149,28 @@ Deno.test("definition - calculateFirstFollow - fix", () => {
       mkMany(mkIdentifier("Identifier")),
     ),
   ]);
+});
+
+Deno.test("definition - ll(1) error - alternative selection ambiguity", () => {
+  const scanner = scannerDefinition();
+
+  Assert.assertEquals(
+    mkDefinition(
+      scanner,
+      [mkProduction(
+        "Program",
+        mkAlternative([mkIdentifier("Identifier"), mkIdentifier("Identifier")]),
+      )],
+    ),
+    left([{
+      tag: "AmbiguousAlternativesError",
+      name: "Program",
+      alternatives: [
+        [mkIdentifier("Identifier"), Set.setOf("Identifier")],
+        [mkIdentifier("Identifier"), Set.setOf("Identifier")],
+      ],
+    }]),
+  );
 });
 
 const assertFirstFollowEquals = (

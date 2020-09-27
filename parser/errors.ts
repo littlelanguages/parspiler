@@ -3,7 +3,7 @@ import { Errors as ScanpilerErrors } from "../scanpiler.ts";
 import { TToken } from "./scanner.ts";
 import { SyntaxError } from "./parser.ts";
 import { Location } from "./location.ts";
-import { DefinitionError } from "../cfg/definition.ts";
+import { DefinitionError, Expr } from "../cfg/definition.ts";
 
 export type Errors = Array<ErrorItem>;
 
@@ -108,10 +108,29 @@ export function asDoc(
         errorItem.name,
         " is left recursive",
       ]);
+    case "AmbiguousAlternativesError":
+      return PP.vcat([
+        PP.hcat(
+          ["The production ", errorItem.name, " has ambigious alternatives:"],
+        ),
+        PP.nest(
+          2,
+          PP.vcat(errorItem.alternatives.map((a) =>
+            PP.vcat([
+              exprToDoc(a[0]),
+              PP.nest(2, PP.hcat(["First: {", PP.join([...a[1]], ", "), "}"])),
+            ])
+          )),
+        ),
+      ]);
   }
 }
 
-export function ttokenAsString(ttoken: TToken): string {
+const exprToDoc = (e: Expr): PP.Doc => {
+  return PP.text(JSON.stringify(e, null, 2));
+};
+
+export const ttokenAsString = (ttoken: TToken): string => {
   switch (ttoken) {
     case TToken.Uses:
       return "uses";
@@ -142,4 +161,4 @@ export function ttokenAsString(ttoken: TToken): string {
     case TToken.ERROR:
       return "unknown token";
   }
-}
+};

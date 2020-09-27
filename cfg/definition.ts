@@ -43,7 +43,7 @@ export const mkDefinition = (
       firsts,
       follows,
     };
-  });
+  }).andThen(validateLL1);
 };
 
 export type Production = {
@@ -104,11 +104,19 @@ export const mkOptional = (expr: Expr): Optional => ({ tag: "Optional", expr });
 
 export type DefinitionErrors = Array<DefinitionError>;
 
-export type DefinitionError = LeftRecursiveGrammarError;
+export type DefinitionError =
+  | LeftRecursiveGrammarError
+  | AmbiguousAlternativesError;
 
 export type LeftRecursiveGrammarError = {
   tag: "LeftRecursiveGrammarError";
   name: string;
+};
+
+export type AmbiguousAlternativesError = {
+  tag: "AmbiguousAlternativesError";
+  name: string;
+  alternatives: Array<[Expr, Set<string>]>;
 };
 
 type CalculationDefinition = {
@@ -201,6 +209,53 @@ const validateNotLeftRecursive = (
     .map((dep) => ({ tag: "LeftRecursiveGrammarError", name: dep[0] }));
 
   return (errors.length === 0) ? right(undefined) : left(errors);
+};
+
+const validateLL1 = (
+  definition: Definition,
+): Either<DefinitionErrors, Definition> => {
+  const validateProduction = (production: Production): DefinitionErrors => {
+    const validateExpression = (e: Expr): DefinitionErrors => {
+      switch (e.tag) {
+        case "Identifier":
+          return [];
+        case "Sequence":
+          return e.exprs.flatMap(validateExpression);
+        case "Alternative": {
+          const alts: Array<[Expr, Set<string>]> = e.exprs.map((
+            es,
+          ) => [es, first(definition.firsts, es)]);
+
+          let error = false;
+          for (let i = 0; i < alts.length && !error; i += 1) {
+            for (let j = i + 1; j < alts.length && !error; j += 1) {
+              error = Set.intersection(alts[i][1], alts[j][1]).size > 0;
+            }
+          }
+
+          return error
+            ? [
+              {
+                tag: "AmbiguousAlternativesError",
+                name: production.lhs,
+                alternatives: alts,
+              },
+            ]
+            : [];
+        }
+        case "Many":
+          return [];
+        default:
+          return [];
+      }
+    };
+
+    return validateExpression(production.expr);
+  };
+
+  const errors = definition.productions.flatMap(validateProduction);
+
+  return errors.length === 0 ? right(definition) : left(errors);
 };
 
 const calculateEmptyNonTerminalNames = (
