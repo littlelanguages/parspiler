@@ -1,10 +1,8 @@
 import * as Assert from "../testing/asserts.ts";
 
-import * as AST from "./ast.ts";
 import { right } from "../data/either.ts";
 import { mkCoordinate, range } from "./location.ts";
 import { mkParser, parseDefinition } from "./parser.ts";
-import { mkScanner } from "./scanner.ts";
 
 Deno.test('parser - expr - "while"', () => {
   Assert.assertEquals(
@@ -181,10 +179,9 @@ Deno.test("parser - definition - simple", () => {
   );
 });
 
-const parseExpr = (text: string) =>
-  mkParser(mkScanner(text), AST.visitor).expr();
+const parseExpr = (text: string) => mkParser(text).expr();
 
-const parse = (text: string) => parseDefinition(text, AST.visitor);
+const parse = (text: string) => parseDefinition(text);
 
 const mkID = (point: [number, number, number], id: string) => ({
   tag: "ID",

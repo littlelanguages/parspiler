@@ -26,40 +26,36 @@ export const translate = (
   input: string,
 ): Promise<Either<Errors.Errors, Definition>> =>
   Parser
-    .parseDefinition(input, AST.visitor)
-    .mapLeft((e) => [e])
+    .parseDefinition(input)
+    .mapLeft((e) => [e] as Errors.Errors)
     .either(
-      (l) => Promise.resolve(left(l)),
-      async (ast) => {
+      (l) => Promise.resolve(left(l) as Either<Errors.Errors, Definition>),
+      (ast) => {
         const fileName = dropRight(1, dropLeft(1, ast.uses.value));
-        try {
-          const input = await Deno.readTextFile(relativeTo(
-            inputFileName,
-            fileName,
-          ));
-          return Scanpiler.translate(input).mapLeft((e) =>
-            [{
+
+        return Deno.readTextFile(relativeTo(
+          inputFileName,
+          fileName,
+        )).then((input) =>
+          Scanpiler
+            .translate(input).mapLeft((e) => [{
               tag: "ScannerDefinitionError",
               location: ast.uses.location,
               fileName: fileName,
               errors: e,
-            }] as Errors.Errors
-          ).andThen((scannerDefinition) =>
-            translateAST(ast, scannerDefinition)
-          );
-        } catch (_) {
-          return left(
-            [
-              {
-                tag: "ScannerDefinitionFileDoesNotExistError",
-                location: ast.uses.location,
-                name: fileName,
-              },
-            ] as Errors.Errors,
-          );
-        }
+            } as Errors.ErrorItem])
+            .andThen((scannerDefinition) =>
+              translateAST(ast, scannerDefinition)
+            )
+        ).catch((_) =>
+          left([{
+            tag: "ScannerDefinitionFileDoesNotExistError",
+            location: ast.uses.location,
+            name: fileName,
+          }])
+        );
       },
-    ) as Promise<Either<Errors.Errors, Definition>>;
+    );
 
 const relativeTo = (src: string, target: string): string => {
   let srcParse = Path.parse(src);

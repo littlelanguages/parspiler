@@ -1,8 +1,8 @@
 import * as PP from "https://raw.githubusercontent.com/littlelanguages/deno-lib-text-prettyprint/0.3.1/mod.ts";
 
 import * as Scanpiler from "../tool/scanpiler.ts";
-import { TToken } from "./scanner.ts";
-import { SyntaxError } from "./parser.ts";
+import { TToken } from "./parspiler-scanner.ts";
+import { SyntaxError } from "./parspiler-parser.ts";
 import { Location } from "./location.ts";
 import { DefinitionError, Expr } from "../cfg/definition.ts";
 
