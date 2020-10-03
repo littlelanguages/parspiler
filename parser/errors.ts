@@ -1,6 +1,6 @@
 import * as PP from "https://raw.githubusercontent.com/littlelanguages/deno-lib-text-prettyprint/0.3.1/mod.ts";
 
-import { Errors as ScanpilerErrors } from "../scanpiler.ts";
+import * as Scanpiler from "../tool/scanpiler.ts";
 import { TToken } from "./scanner.ts";
 import { SyntaxError } from "./parser.ts";
 import { Location } from "./location.ts";
@@ -21,7 +21,7 @@ export type ScannerDefinitionError = {
   tag: "ScannerDefinitionError";
   location: Location;
   fileName: string;
-  errors: ScanpilerErrors.Errors;
+  errors: Scanpiler.Errors;
 };
 
 export type ScannerDefinitionFileDoesNotExistError = {
@@ -58,14 +58,12 @@ export const asDoc = (
         PP.hcat([
           "Unable to load the scanner definition ",
           errorItem.fileName,
-          ScanpilerErrors.errorLocation(errorItem.location, fileName),
+          Scanpiler.errorLocation(errorItem.location, fileName),
         ]),
         PP.nest(
           2,
           PP.vcat(
-            errorItem.errors.map((e) =>
-              ScanpilerErrors.asDoc(e, errorItem.fileName)
-            ),
+            errorItem.errors.map((e) => Scanpiler.asDoc(e, errorItem.fileName)),
           ),
         ),
       ]);
@@ -75,33 +73,33 @@ export const asDoc = (
         ttokenAsString(errorItem.found[0]),
         ". Expected ",
         PP.join(errorItem.expected.map(ttokenAsString), ", ", " or "),
-        ScanpilerErrors.errorLocation(errorItem.found[1], fileName),
+        Scanpiler.errorLocation(errorItem.found[1], fileName),
       ]);
     case "ScannerDefinitionFileDoesNotExistError":
       return PP.hcat([
         "Unable to read the scanner definition file ",
         errorItem.name,
-        ScanpilerErrors.errorLocation(errorItem.location, fileName),
+        Scanpiler.errorLocation(errorItem.location, fileName),
       ]);
     case "UnknownSymbolError":
       return PP.hcat([
         "No terminal or non-terminal defined with the name ",
         errorItem.name,
-        ScanpilerErrors.errorLocation(errorItem.location, fileName),
+        Scanpiler.errorLocation(errorItem.location, fileName),
       ]);
     case "SymbolDefinedAsNonTerminalError":
       return PP.hcat([
         "The name ",
         errorItem.name,
         " is already defined as a non-terminal",
-        ScanpilerErrors.errorLocation(errorItem.location, fileName),
+        Scanpiler.errorLocation(errorItem.location, fileName),
       ]);
     case "SymbolDefinedAsTerminalError":
       return PP.hcat([
         "No name ",
         errorItem.name,
         " is already defined as a terminal",
-        ScanpilerErrors.errorLocation(errorItem.location, fileName),
+        Scanpiler.errorLocation(errorItem.location, fileName),
       ]);
     case "LeftRecursiveGrammarError":
       return PP.hcat([

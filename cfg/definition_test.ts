@@ -13,13 +13,13 @@ import {
   mkProduction,
   mkSequence,
 } from "./definition.ts";
-import { Dynamic, Definition as LADefinition } from "../scanpiler.ts";
+import * as Scanpiler from "../tool/scanpiler.ts";
 import { assertEquals } from "../testing/asserts.ts";
 
-function scannerDefinition(): LADefinition.Definition {
-  return Dynamic
+function scannerDefinition(): Scanpiler.Definition {
+  return Scanpiler
     .translate(Deno.readTextFileSync("./test/simple.ll"))
-    .either((_) => new LADefinition.Definition(), (d) => d);
+    .either((_) => new Scanpiler.Definition(), (d) => d);
 }
 
 Deno.test("definition - calculateFirstFollow - left recursive check", () => {
@@ -65,13 +65,13 @@ Deno.test("definition - calculateFirstFollow - sample grammar", () => {
   // E: ["g"];
   // F: ["f"];
 
-  const scanner = new LADefinition.Definition()
-    .addToken("a", new LADefinition.LiteralStringRegEx("a"))
-    .addToken("b", new LADefinition.LiteralStringRegEx("b"))
-    .addToken("c", new LADefinition.LiteralStringRegEx("c"))
-    .addToken("f", new LADefinition.LiteralStringRegEx("f"))
-    .addToken("g", new LADefinition.LiteralStringRegEx("g"))
-    .addToken("h", new LADefinition.LiteralStringRegEx("h"));
+  const scanner = new Scanpiler.Definition()
+    .addToken("a", new Scanpiler.LiteralStringRegEx("a"))
+    .addToken("b", new Scanpiler.LiteralStringRegEx("b"))
+    .addToken("c", new Scanpiler.LiteralStringRegEx("c"))
+    .addToken("f", new Scanpiler.LiteralStringRegEx("f"))
+    .addToken("g", new Scanpiler.LiteralStringRegEx("g"))
+    .addToken("h", new Scanpiler.LiteralStringRegEx("h"));
 
   const definition = mkDefinition(scanner, [
     mkProduction(
@@ -130,8 +130,8 @@ Deno.test("definition - calculateFirstFollow - sample grammar", () => {
 });
 
 Deno.test("definition - calculateFirstFollow - fix", () => {
-  const scanner = new LADefinition.Definition()
-    .addToken("Identifier", new LADefinition.LiteralStringRegEx("x"));
+  const scanner = new Scanpiler.Definition()
+    .addToken("Identifier", new Scanpiler.LiteralStringRegEx("x"));
 
   mkDefinition(scanner, [
     mkProduction(

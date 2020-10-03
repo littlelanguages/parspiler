@@ -2,10 +2,10 @@ import * as Array from "../data/array.ts";
 import * as Set from "../data/set.ts";
 import { Either, left, right } from "../data/either.ts";
 
-import { Scanner } from "../scanpiler.ts";
+import * as Scanpiler from "../tool/scanpiler.ts";
 
 export type Definition = {
-  scanner: Scanner.Definition;
+  scanner: Scanpiler.Definition;
   productions: Array<Production>;
   terminalNames: Set<string>;
   nonTerminalNames: Set<string>;
@@ -14,7 +14,7 @@ export type Definition = {
 };
 
 export const mkDefinition = (
-  scanner: Scanner.Definition,
+  scanner: Scanpiler.Definition,
   productions: Array<Production>,
 ): Either<DefinitionErrors, Definition> => {
   const terminalNames = Set.setOf(scanner.tokens.map((t) => t[0]));
@@ -128,7 +128,7 @@ export type AmbiguousSequenceError = {
 };
 
 type CalculationDefinition = {
-  scanner: Scanner.Definition;
+  scanner: Scanpiler.Definition;
   productions: Array<Production>;
   terminalNames: Set<string>;
   nonTerminalNames: Set<string>;

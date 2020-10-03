@@ -19,7 +19,7 @@ import {
   mkSequence,
   Production,
 } from "../cfg/definition.ts";
-import { Dynamic, Definition as ScanpilerDefinition } from "../scanpiler.ts";
+import * as Scanpiler from "../tool/scanpiler.ts";
 
 export const translate = (
   inputFileName: string,
@@ -37,7 +37,7 @@ export const translate = (
             inputFileName,
             fileName,
           ));
-          return Dynamic.translate(input).mapLeft((e) =>
+          return Scanpiler.translate(input).mapLeft((e) =>
             [{
               tag: "ScannerDefinitionError",
               location: ast.uses.location,
@@ -77,7 +77,7 @@ const relativeTo = (src: string, target: string): string => {
 
 const translateAST = (
   ast: AST.Definition,
-  scannerDefinition: ScanpilerDefinition.Definition,
+  scannerDefinition: Scanpiler.Definition,
 ): Either<Errors.Errors, Definition> => {
   const nonTerminals = Set.setOf(ast.productions.map((p) => p.name.id));
   const terminals = Set.setOf(scannerDefinition.tokens.map((t) => t[0]));
@@ -155,7 +155,7 @@ const translateAST = (
 };
 
 const addLiteralToken = (
-  scanner: ScanpilerDefinition.Definition,
+  scanner: Scanpiler.Definition,
   text: string,
 ): string => {
   const token = scanner.literalMatch(text);
@@ -165,7 +165,7 @@ const addLiteralToken = (
 
     scanner.addToken(
       tokenName,
-      new ScanpilerDefinition.LiteralStringRegEx(text),
+      new Scanpiler.LiteralStringRegEx(text),
       0,
     );
 
@@ -176,7 +176,7 @@ const addLiteralToken = (
 };
 
 export const calculateTokenName = (
-  scanner: ScanpilerDefinition.Definition,
+  scanner: Scanpiler.Definition,
   text: string,
 ): string => {
   let candidateName = "";

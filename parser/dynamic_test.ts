@@ -15,12 +15,11 @@ import {
   mkProduction,
   mkSequence,
 } from "../cfg/definition.ts";
-import { Dynamic, Definition as LADefinition } from "../scanpiler.ts";
+import * as Scanpiler from "../tool/scanpiler.ts";
 
-function scannerDefinition(): LADefinition.Definition {
-  return Dynamic
-    .translate(Deno.readTextFileSync("./test/simple.ll"))
-    .either((_) => new LADefinition.Definition(), (d) => d);
+function scannerDefinition(): Scanpiler.Definition {
+  return Scanpiler.translate(Deno.readTextFileSync("./test/simple.ll"))
+    .either((_) => new Scanpiler.Definition(), (d) => d);
 }
 
 Deno.test("dynamic - scanner file does not exist", async () => {
@@ -210,8 +209,8 @@ Deno.test("dynamic - duplicate non-terminal name", async () => {
 Deno.test("dynamic - move literal strings into terminals", async () => {
   const scanner = scannerDefinition();
 
-  scanner.addToken("Period", new LADefinition.LiteralStringRegEx("."), 0);
-  scanner.addToken("Hello", new LADefinition.LiteralStringRegEx("hello"), 1);
+  scanner.addToken("Period", new Scanpiler.LiteralStringRegEx("."), 0);
+  scanner.addToken("Hello", new Scanpiler.LiteralStringRegEx("hello"), 1);
 
   await assertTranslation(
     'uses "./test/simple.ll";\n' + 'Program: "hello" "." ;',
@@ -253,7 +252,7 @@ Deno.test("dynamic - match literal strings with terminals", async () => {
 Deno.test("dynamic - create and match literal strings with terminals", async () => {
   const scanner = scannerDefinition();
 
-  scanner.addToken("From", new LADefinition.LiteralStringRegEx("from"), 0);
+  scanner.addToken("From", new Scanpiler.LiteralStringRegEx("from"), 0);
 
   await assertTranslation(
     'uses "./test/simple.ll";\n' + 'Program: "from" ";" "from" ;',
@@ -292,7 +291,7 @@ Deno.test("dynamic - resolve token name with clash", async () => {
 
   scanner.addToken(
     "Identifier1",
-    new LADefinition.LiteralStringRegEx("Identifier"),
+    new Scanpiler.LiteralStringRegEx("Identifier"),
   );
 
   Assert.assertEquals(calculateTokenName(scanner, "Identifier"), "Identifier2");
