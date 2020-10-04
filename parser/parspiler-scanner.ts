@@ -17,23 +17,23 @@ export class Scanner extends AbstractScanner.Scanner<TToken> {
       while (true) {
         switch (state) {
           case 0: {
-            if (this.nextCh == 117) {
+            if (this.nextCh == 93) {
               this.markAndNextChar();
               state = 1;
               break;
-            } else if (this.nextCh == 124) {
+            } else if (this.nextCh == 91) {
               this.markAndNextChar();
               state = 2;
               break;
-            } else if (this.nextCh == 58) {
+            } else if (this.nextCh == 125) {
               this.markAndNextChar();
               state = 3;
               break;
-            } else if (this.nextCh == 91) {
+            } else if (this.nextCh == 123) {
               this.markAndNextChar();
               state = 4;
               break;
-            } else if (this.nextCh == 123) {
+            } else if (this.nextCh == 41) {
               this.markAndNextChar();
               state = 5;
               break;
@@ -41,19 +41,19 @@ export class Scanner extends AbstractScanner.Scanner<TToken> {
               this.markAndNextChar();
               state = 6;
               break;
-            } else if (this.nextCh == 93) {
+            } else if (this.nextCh == 124) {
               this.markAndNextChar();
               state = 7;
               break;
-            } else if (this.nextCh == 125) {
+            } else if (this.nextCh == 58) {
               this.markAndNextChar();
               state = 8;
               break;
-            } else if (this.nextCh == 41) {
+            } else if (this.nextCh == 59) {
               this.markAndNextChar();
               state = 9;
               break;
-            } else if (this.nextCh == 59) {
+            } else if (this.nextCh == 117) {
               this.markAndNextChar();
               state = 10;
               break;
@@ -84,23 +84,8 @@ export class Scanner extends AbstractScanner.Scanner<TToken> {
             }
           }
           case 1: {
-            if (
-              48 <= this.nextCh && this.nextCh <= 57 ||
-              65 <= this.nextCh && this.nextCh <= 90 ||
-              97 <= this.nextCh && this.nextCh <= 114 ||
-              116 <= this.nextCh && this.nextCh <= 122
-            ) {
-              this.nextChar();
-              state = 12;
-              break;
-            } else if (this.nextCh == 115) {
-              this.nextChar();
-              state = 15;
-              break;
-            } else {
-              this.setToken(11);
-              return;
-            }
+            this.setToken(0);
+            return;
           }
           case 2: {
             this.setToken(1);
@@ -135,8 +120,23 @@ export class Scanner extends AbstractScanner.Scanner<TToken> {
             return;
           }
           case 10: {
-            this.setToken(9);
-            return;
+            if (
+              48 <= this.nextCh && this.nextCh <= 57 ||
+              65 <= this.nextCh && this.nextCh <= 90 ||
+              97 <= this.nextCh && this.nextCh <= 114 ||
+              116 <= this.nextCh && this.nextCh <= 122
+            ) {
+              this.nextChar();
+              state = 12;
+              break;
+            } else if (this.nextCh == 115) {
+              this.nextChar();
+              state = 15;
+              break;
+            } else {
+              this.setToken(11);
+              return;
+            }
           }
           case 11: {
             if (
@@ -321,7 +321,7 @@ export class Scanner extends AbstractScanner.Scanner<TToken> {
               state = 12;
               break;
             } else {
-              this.setToken(0);
+              this.setToken(9);
               return;
             }
           }
@@ -336,16 +336,16 @@ export function mkScanner(input: string): Scanner {
 }
 
 export enum TToken {
-  Uses,
+  RBracket,
+  LBracket,
+  RCurly,
+  LCurly,
+  RParen,
+  LParen,
   Bar,
   Colon,
-  LBracket,
-  LCurly,
-  LParen,
-  RBracket,
-  RCurly,
-  RParen,
   Semicolon,
+  Uses,
   LiteralString,
   Identifier,
   EOS,

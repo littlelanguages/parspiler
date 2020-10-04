@@ -1,16 +1,4 @@
 tokens
-    Uses = "uses";
-
-    Bar = "|";
-    Colon = ":";
-    LBracket = "[";
-    LCurly = "{";
-    LParen = "(";
-    RBracket = "]";
-    RCurly = "}";
-    RParen = ")";
-    Semicolon = ";";
-
     LiteralString = '"' {!'"'} '"';
     Identifier = alpha {alpha | digit};
 

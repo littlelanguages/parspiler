@@ -18,7 +18,7 @@ import {
 import * as Scanpiler from "../tool/scanpiler.ts";
 
 function scannerDefinition(): Scanpiler.Definition {
-  return Scanpiler.translate(Deno.readTextFileSync("./test/simple.ll"))
+  return Scanpiler.translate(Deno.readTextFileSync("./test/simple.llld"))
     .either((_) => new Scanpiler.Definition(), (d) => d);
 }
 
@@ -35,7 +35,7 @@ Deno.test("dynamic - scanner file does not exist", async () => {
 Deno.test("dynamic - scanner file exists", async () => {
   const translation = await translate(
     "./sample.pd",
-    'uses "./test/simple.ll";',
+    'uses "./test/simple.llld";',
   );
 
   Assert.assertEquals(
@@ -45,10 +45,10 @@ Deno.test("dynamic - scanner file exists", async () => {
 });
 
 Deno.test("dynamic - an error in the scanner file propogates", async () => {
-  await assertTranslateErrors('uses "./test/broken.ll";', [{
+  await assertTranslateErrors('uses "./test/broken.llld";', [{
     tag: "ScannerDefinitionError",
-    location: range(5, 1, 6, 22, 1, 23),
-    fileName: "./test/broken.ll",
+    location: range(5, 1, 6, 24, 1, 25),
+    fileName: "./test/broken.llld",
     errors: [
       {
         tag: "UnknownFragmentIdentifierError",
@@ -61,7 +61,7 @@ Deno.test("dynamic - an error in the scanner file propogates", async () => {
 
 Deno.test("dynamic - reference to terminal symbol", async () => {
   await assertTranslation(
-    'uses "./test/simple.ll";\n' + "Program: Identifier;",
+    'uses "./test/simple.llld";\n' + "Program: Identifier;",
     mkDefinition(
       scannerDefinition(),
       [
@@ -74,7 +74,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
   );
 
   await assertTranslation(
-    'uses "./test/simple.ll";\n' + "Program: Identifier Identifier;",
+    'uses "./test/simple.llld";\n' + "Program: Identifier Identifier;",
     mkDefinition(
       scannerDefinition(),
       [
@@ -89,7 +89,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
   );
 
   await assertTranslation(
-    'uses "./test/simple.ll";\n' + "Program: {Identifier};",
+    'uses "./test/simple.llld";\n' + "Program: {Identifier};",
     mkDefinition(
       scannerDefinition(),
       [
@@ -102,7 +102,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
   );
 
   await assertTranslation(
-    'uses "./test/simple.ll";\n' + "Program: [Identifier];",
+    'uses "./test/simple.llld";\n' + "Program: [Identifier];",
     mkDefinition(
       scannerDefinition(),
       [
@@ -115,7 +115,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
   );
 
   await assertTranslation(
-    'uses "./test/simple.ll";\n' + "Program: (Identifier);",
+    'uses "./test/simple.llld";\n' + "Program: (Identifier);",
     mkDefinition(
       scannerDefinition(),
       [
@@ -128,7 +128,7 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
   );
 
   await assertTranslation(
-    'uses "./test/simple.ll";\n' + "Program: (Identifier | Identifier);",
+    'uses "./test/simple.llld";\n' + "Program: (Identifier | Identifier);",
     mkDefinition(
       scannerDefinition(),
       [
@@ -144,10 +144,10 @@ Deno.test("dynamic - reference to terminal symbol", async () => {
 });
 
 Deno.test("dynamic - reference to an unknown symbol", async () => {
-  await assertTranslateErrors('uses "./test/simple.ll";\nProduction: ID;', [
+  await assertTranslateErrors('uses "./test/simple.llld";\nProduction: ID;', [
     {
       tag: "UnknownSymbolError",
-      location: range(37, 2, 13, 38, 2, 14),
+      location: range(39, 2, 13, 40, 2, 14),
       name: "ID",
     },
   ]);
@@ -155,7 +155,7 @@ Deno.test("dynamic - reference to an unknown symbol", async () => {
 
 Deno.test("dynamic - reference to non-terminal symbol", async () => {
   await assertTranslation(
-    'uses "./test/simple.ll";\n' +
+    'uses "./test/simple.llld";\n' +
       "Program: Names;\nNames: Identifier {Identifier};",
     mkDefinition(
       scannerDefinition(),
@@ -180,12 +180,12 @@ Deno.test("dynamic - reference to non-terminal symbol", async () => {
 
 Deno.test("dynamic - non-terminal and terminal symbol clash", async () => {
   await assertTranslateErrors(
-    'uses "./test/simple.ll";\n' +
+    'uses "./test/simple.llld";\n' +
       "Program: Identifier;\nIdentifier: Identifier {Identifier};",
     [
       {
         tag: "SymbolDefinedAsTerminalError",
-        location: range(46, 3, 1, 55, 3, 10),
+        location: range(48, 3, 1, 57, 3, 10),
         name: "Identifier",
       },
     ],
@@ -194,12 +194,12 @@ Deno.test("dynamic - non-terminal and terminal symbol clash", async () => {
 
 Deno.test("dynamic - duplicate non-terminal name", async () => {
   await assertTranslateErrors(
-    'uses "./test/simple.ll";\n' +
+    'uses "./test/simple.llld";\n' +
       "Program: Identifier;\nProgram: Identifier {Identifier};",
     [
       {
         tag: "SymbolDefinedAsNonTerminalError",
-        location: range(46, 3, 1, 52, 3, 7),
+        location: range(48, 3, 1, 54, 3, 7),
         name: "Program",
       },
     ],
@@ -213,7 +213,7 @@ Deno.test("dynamic - move literal strings into terminals", async () => {
   scanner.addToken("Hello", new Scanpiler.LiteralStringRegEx("hello"), 1);
 
   await assertTranslation(
-    'uses "./test/simple.ll";\n' + 'Program: "hello" "." ;',
+    'uses "./test/simple.llld";\n' + 'Program: "hello" "." ;',
     mkDefinition(
       scanner,
       [
@@ -233,7 +233,7 @@ Deno.test("dynamic - match literal strings with terminals", async () => {
   const scanner = scannerDefinition();
 
   await assertTranslation(
-    'uses "./test/simple.ll";\n' + 'Program: "uses" ";" ;',
+    'uses "./test/simple.llld";\n' + 'Program: "uses" ";" ;',
     mkDefinition(
       scanner,
       [
@@ -255,7 +255,7 @@ Deno.test("dynamic - create and match literal strings with terminals", async () 
   scanner.addToken("From", new Scanpiler.LiteralStringRegEx("from"), 0);
 
   await assertTranslation(
-    'uses "./test/simple.ll";\n' + 'Program: "from" ";" "from" ;',
+    'uses "./test/simple.llld";\n' + 'Program: "from" ";" "from" ;',
     mkDefinition(
       scanner,
       [

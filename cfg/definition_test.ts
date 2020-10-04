@@ -18,7 +18,7 @@ import { assertEquals } from "../testing/asserts.ts";
 
 function scannerDefinition(): Scanpiler.Definition {
   return Scanpiler
-    .translate(Deno.readTextFileSync("./test/simple.ll"))
+    .translate(Deno.readTextFileSync("./test/simple.llld"))
     .either((_) => new Scanpiler.Definition(), (d) => d);
 }
 
