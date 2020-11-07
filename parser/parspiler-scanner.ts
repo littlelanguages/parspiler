@@ -1,4 +1,4 @@
-import * as AbstractScanner from "https://raw.githubusercontent.com/littlelanguages/scanpiler-deno-lib/0.1.0/abstract-scanner.ts";
+import * as AbstractScanner from "https://raw.githubusercontent.com/littlelanguages/scanpiler-deno-lib/0.1.1/abstract-scanner.ts";
 
 export type Token = AbstractScanner.Token<TToken>;
 

@@ -1,4 +1,4 @@
-import * as Path from "https://deno.land/std@0.71.0/path/mod.ts";
+import * as Path from "https://deno.land/std@0.76.0/path/mod.ts";
 
 import { Either, left } from "../data/either.ts";
 import { dropLeft, dropRight } from "../data/string.ts";

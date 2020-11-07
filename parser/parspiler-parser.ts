@@ -2,7 +2,7 @@ import {
   Either,
   left,
   right,
-} from "https://raw.githubusercontent.com/littlelanguages/deno-lib-data-either/0.1.0/mod.ts";
+} from "https://raw.githubusercontent.com/littlelanguages/deno-lib-data-either/0.1.2/mod.ts";
 import { mkScanner, Scanner, Token, TToken } from "./parspiler-scanner.ts";
 
 export interface Visitor<
